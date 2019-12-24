@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "betterconf"
 version = "1.0.0"
-description = "Python configs for humans."
+description = "Python configs for humans. Using OS environment."
 authors = ["prostomarkeloff"]
 license = "MIT"
 
@@ -12,6 +12,7 @@ python = "^3.6"
 black = "^19.10b0"
 pre-commit = "^1.20.0"
 mypy = "^0.761"
+pytest = "^5.3.2"
 
 [build-system]
 requires = ["poetry>=1.0.0"]
