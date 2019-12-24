@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterconf"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python configs for humans. Using OS environment."
 authors = ["prostomarkeloff"]
 license = "MIT"

@@ -54,4 +54,4 @@ class Config:
             setattr(self, obj.name_to_set, obj.obj.value)
 
 
-__all__ = (Config, field)
+__all__ = ("Config", "field")
