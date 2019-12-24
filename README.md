@@ -1,6 +1,7 @@
 # Python configs for humans.
 > Using OS environment.
 
+Before you ask - this library doesn't support type-casts and other features. Just env parsing.
 
 ## How to?
 At first, install libary:

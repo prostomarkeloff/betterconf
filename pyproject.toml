@@ -4,9 +4,10 @@ version = "1.0.0"
 description = "Python configs for humans. Using OS environment."
 authors = ["prostomarkeloff"]
 license = "MIT"
+readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
