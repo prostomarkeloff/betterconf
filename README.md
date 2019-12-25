@@ -1,5 +1,5 @@
 # Python configs for humans.
-> Using OS environment.
+> Using OS environment. Following unix-way.
 
 Before you ask - this library doesn't support type-casts and other features. Just env parsing.
 
