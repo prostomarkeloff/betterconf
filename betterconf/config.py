@@ -3,13 +3,16 @@ import typing
 
 
 class Field:
-    def __init__(self, name: str):
+    def __init__(self, name: str, default: typing.Optional[typing.Any] = None):
         self._value = os.getenv(name)
+        self._default = default
 
     @property
     def value(self):
         if not self._value:
-            raise ValueError("Variable is not defined!")
+            if not self._default:
+                raise ValueError("Variable is not defined!")
+            return self._default
         return self._value
 
 
@@ -18,8 +21,8 @@ class FieldInfo(typing.NamedTuple):
     obj: Field
 
 
-def field(name: str) -> Field:
-    return Field(name)
+def field(name: str, default: typing.Optional[typing.Any] = None) -> Field:
+    return Field(name, default)
 
 
 def is_dunder(name: str) -> bool:

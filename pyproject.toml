@@ -1,10 +1,17 @@
 [tool.poetry]
 name = "betterconf"
-version = "1.0.1"
+version = "1.1"
 description = "Python configs for humans. Using OS environment."
 authors = ["prostomarkeloff"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/fscdev/betterconf"
+repository = "https://github.com/fscdev/betterconf"
+documentation = "https://github.com/fscdev/betterconf"
+keywords = ["configs", "config", "env", ".env"]
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 [tool.poetry.dependencies]
 python = "^3.1"
