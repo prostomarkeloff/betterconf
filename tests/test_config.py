@@ -10,11 +10,10 @@ VAR_1_VALUE = "hello!#"
 
 
 def test_not_exist():
+    class ConfigBad(Config):
+        var1 = field(VAR_1)
+
     with pytest.raises(ValueError):
-
-        class ConfigBad(Config):
-            var1 = field(VAR_1)
-
         cfg = ConfigBad()
 
 
