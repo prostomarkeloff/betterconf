@@ -1,7 +1,4 @@
-# Python configs for humans.
-> Using OS environment. Following unix-way.
-
-Before you ask - this library doesn't support type-casts and other features. Just env parsing.
+# Minimalistic Python library for your configs.
 
 ## How to?
 At first, install libary:
@@ -48,4 +45,23 @@ class MyConfig(Config):
 cfg = MyConfig(my_var="WOW!")
 print(cfg.my_var)
 # WOW!
+```
+
+By default `betterconf` gets all values from `os.environ` but sometimes we need much.
+You can create own `field value provider` in minutes:
+
+```python
+from betterconf import field, Config
+from betterconf.config import AbstractProvider
+
+class NameProvider(AbstractProvider):
+    def get(self, name: str):
+        return name
+
+class Cfg(Config):
+    my_var = field("my_var", provider=NameProvider())
+
+cfg = Cfg()
+print(cfg.my_var)
+# my_var
 ```

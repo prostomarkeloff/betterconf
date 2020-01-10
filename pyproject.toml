@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "betterconf"
-version = "1.2"
-description = "Python configs for humans. Using OS environment."
+version = "1.5"
+description = "Minimalistic Python library for your configs."
 authors = ["prostomarkeloff"]
 license = "MIT"
 readme = "README.md"

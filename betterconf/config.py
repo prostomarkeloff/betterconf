@@ -2,16 +2,39 @@ import os
 import typing
 
 
+class AbstractProvider:
+    """Implement this class and pass to `field`"""
+
+    def get(self, name: str) -> typing.Any:
+        """Return a value or None"""
+        raise NotImplementedError()
+
+
+class EnvironmentProvider(AbstractProvider):
+    """Default provider. Get vals from environment"""
+
+    def get(self, name: str) -> typing.Any:
+        return os.getenv(name)
+
+
+DEFAULT_PROVIDER = EnvironmentProvider()
+
+
 class Field:
-    def __init__(self, name: str, default: typing.Optional[typing.Any] = None):
-        self._value = os.getenv(name)
+    def __init__(
+        self,
+        name: str,
+        default: typing.Optional[typing.Any] = None,
+        provider: AbstractProvider = DEFAULT_PROVIDER,
+    ):
+        self._value = provider.get(name)
         self._default = default
 
     @property
     def value(self):
         if not self._value:
             if not self._default:
-                raise ValueError("Variable is not defined!")
+                raise ValueError("Variable is not found")
             return self._default
         return self._value
 
@@ -21,8 +44,12 @@ class FieldInfo(typing.NamedTuple):
     obj: Field
 
 
-def field(name: str, default: typing.Optional[typing.Any] = None) -> Field:
-    return Field(name, default)
+def field(
+    name: str,
+    default: typing.Optional[typing.Any] = None,
+    provider: AbstractProvider = DEFAULT_PROVIDER,
+) -> Field:
+    return Field(name, default, provider)
 
 
 def is_dunder(name: str) -> bool:
@@ -57,4 +84,4 @@ class Config:
             setattr(self, obj.name_to_set, obj.obj.value)
 
 
-__all__ = ("Config", "field")
+__all__ = ("Config", "field", "AbstractProvider", "EnvironmentProvider")

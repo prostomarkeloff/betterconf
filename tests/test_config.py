@@ -4,6 +4,7 @@ import pytest
 
 from betterconf import Config
 from betterconf import field
+from betterconf.config import AbstractProvider
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
@@ -41,3 +42,17 @@ def test_override():
 
     cfg = ConfigOverride(var1=100000)
     assert cfg.var1 == 100000
+
+
+def test_own_provider():
+    class MyProvider(AbstractProvider):
+        def get(self, name: str):
+            return name  # just return name of filed =)
+
+    provider = MyProvider()
+
+    class ConfigWithMyProvider(Config):
+        var1 = field("var_1", provider=provider)
+
+    cfg = ConfigWithMyProvider()
+    assert cfg.var1 == "var_1"
