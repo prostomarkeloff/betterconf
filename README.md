@@ -65,3 +65,13 @@ cfg = Cfg()
 print(cfg.my_var)
 # my_var
 ```
+
+
+
+## License
+This project is licensed under MIT License.
+
+See [LICENSE](LICENSE) for details.
+
+
+Made with :heart: by [prostomarkeloff](https://github.com/prostomarkeloff) and our contributors.
