@@ -4,6 +4,9 @@ import pytest
 
 from betterconf import Config
 from betterconf import field
+from betterconf.caster import AbstractCaster
+from betterconf.caster import to_bool
+from betterconf.caster import to_int
 from betterconf.config import AbstractProvider
 
 VAR_1 = "hello"
@@ -56,3 +59,33 @@ def test_own_provider():
 
     cfg = ConfigWithMyProvider()
     assert cfg.var1 == "var_1"
+
+
+def test_bundled_casters():
+    os.environ["boolean"] = "true"
+    os.environ["integer"] = "-543"
+
+    class MyConfig(Config):
+        boolean = field("boolean", caster=to_bool)
+        integer = field("integer", caster=to_int)
+
+    cfg = MyConfig()
+    assert cfg.boolean is True
+    assert cfg.integer == -543
+
+
+def test_own_caster():
+    os.environ["text-with-dashes"] = "text-with-dashes"
+
+    class DashToDotCaster(AbstractCaster):
+        def cast(self, val: str):
+            val = val.replace("-", ".")
+            return val
+
+    to_dot = DashToDotCaster()
+
+    class MyConfig(Config):
+        text = field("text-with-dashes", caster=to_dot)
+
+    cfg = MyConfig()
+    assert cfg.text == "text.with.dashes"

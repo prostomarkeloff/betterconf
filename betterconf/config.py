@@ -1,6 +1,9 @@
 import os
 import typing
 
+from betterconf.caster import AbstractCaster
+from betterconf.caster import DEFAULT_CASTER
+
 
 class AbstractProvider:
     """Implement this class and pass to `field`"""
@@ -26,9 +29,11 @@ class Field:
         name: str,
         default: typing.Optional[typing.Any] = None,
         provider: AbstractProvider = DEFAULT_PROVIDER,
+        caster: AbstractCaster = DEFAULT_CASTER,
     ):
         self._value = provider.get(name)
         self._default = default
+        self._caster = caster
 
     @property
     def value(self):
@@ -36,7 +41,7 @@ class Field:
             if not self._default:
                 raise ValueError("Variable is not found")
             return self._default
-        return self._value
+        return self._caster.cast(self._value)
 
 
 class FieldInfo(typing.NamedTuple):
@@ -48,8 +53,9 @@ def field(
     name: str,
     default: typing.Optional[typing.Any] = None,
     provider: AbstractProvider = DEFAULT_PROVIDER,
+    caster: AbstractCaster = DEFAULT_CASTER,
 ) -> Field:
-    return Field(name, default, provider)
+    return Field(name, default, provider, caster)
 
 
 def is_dunder(name: str) -> bool:
