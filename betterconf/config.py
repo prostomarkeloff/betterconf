@@ -5,6 +5,10 @@ from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
 
 
+def is_callable(obj):
+    return callable(obj)
+
+
 class AbstractProvider:
     """Implement this class and pass to `field`"""
 
@@ -40,7 +44,10 @@ class Field:
         if not self._value:
             if not self._default:
                 raise ValueError("Variable is not found")
-            return self._default
+            if is_callable(self._default):
+                return self._default()
+            else:
+                return self._default
         return self._caster.cast(self._value)
 
 

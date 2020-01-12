@@ -34,9 +34,11 @@ def test_exist():
 def test_default():
     class ConfigDefault(Config):
         var1 = field("var_1", default="var_1 value")
+        var2 = field("var_2", default=lambda: "callable var_2")
 
     cfg = ConfigDefault()
     assert cfg.var1 == "var_1 value"
+    assert cfg.var2 == "callable var_2"
 
 
 def test_override():

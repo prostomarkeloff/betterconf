@@ -29,10 +29,13 @@ from betterconf import field, Config
 
 class MyConfig(Config):
     my_var = field("my_var", default="hello world")
+    my_second_var = field("my_second_var", default=lambda: "hi") # can be callable!
 
 cfg = MyConfig()
 print(cfg.my_var)
+print(cfg.my_second_var)
 # hello world
+# hi
 ```
 
 Override values when it's needed (for an example: test cases)
