@@ -1,13 +1,31 @@
 # Minimalistic Python library for your configs.
 
-## How to?
-At first, install libary:
+Betterconf (**better config**) is a Python library for project configuration
+managment. It allows you define your config like a regular Python class.
+
+Features:
+
+* Easy to hack.
+* Less boilerplate.
+* Minimal code to do big things.
+
+## Installation
+
+I recommend you use poetry:
+
+```sh
+poetry add betterconf
+```
+
+However, you can use pip:
 
 ```sh
 pip install betterconf
 ```
 
-And... write simple config:
+## How to?
+
+Try to write a simple config:
 ```python
 from betterconf import field, Config
 
