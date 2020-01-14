@@ -102,8 +102,8 @@ class DashToDotCaster(AbstractCaster):
 to_dot = DashToDotCaster()
 
 class Cfg(Config):
-    integer = field("int", caster=to_int)
-    boolean = field("bool", caster=to_bool)
+    integer = field("integer", caster=to_int)
+    boolean = field("boolean", caster=to_bool)
     dots = field("dashes", caster=to_dot)
 
 cfg = Cfg()
