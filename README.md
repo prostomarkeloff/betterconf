@@ -11,7 +11,7 @@ Features:
 
 ## Installation
 
-I recommend you use poetry:
+I recommend you to use poetry:
 
 ```sh
 poetry add betterconf
@@ -68,8 +68,8 @@ print(cfg.my_var)
 # WOW!
 ```
 
-By default `betterconf` gets all values from `os.environ` but sometimes we need much.
-You can create own `field value provider` in minutes:
+By default **betterconf** gets all values from `os.environ` but sometimes we need much.
+You can create own `field's value provider` in minutes:
 
 ```python
 from betterconf import field, Config
@@ -113,7 +113,7 @@ print(cfg.integer, cfg.boolean, cfg.dots)
 ```
 
 ```sh
-integer=-500 boolean=true dots=hello-world python our_file.py
+integer=-500 boolean=true dashes=hello-world python our_file.py
 ```
 
 
