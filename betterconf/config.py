@@ -6,6 +6,7 @@ from betterconf.caster import DEFAULT_CASTER
 
 
 def is_callable(obj):
+    """Checks that object is callable (needed for default values)"""
     return callable(obj)
 
 
@@ -18,7 +19,7 @@ class AbstractProvider:
 
 
 class EnvironmentProvider(AbstractProvider):
-    """Default provider. Get vals from environment"""
+    """Default provider. Gets vals from environment"""
 
     def get(self, name: str) -> typing.Any:
         return os.getenv(name)
