@@ -8,6 +8,7 @@ from betterconf.caster import AbstractCaster
 from betterconf.caster import to_bool
 from betterconf.caster import to_int
 from betterconf.config import AbstractProvider
+from betterconf.config import VariableNotFoundError
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
@@ -17,7 +18,7 @@ def test_not_exist():
     class ConfigBad(Config):
         var1 = field(VAR_1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(VariableNotFoundError):
         cfg = ConfigBad()
 
 

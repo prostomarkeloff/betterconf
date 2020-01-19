@@ -5,6 +5,17 @@ from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
 
 
+class BetterconfError(Exception):
+    pass
+
+
+class VariableNotFoundError(BetterconfError):
+    def __init__(self, variable_name: str):
+        self.var_name = variable_name
+        self.message = "Variable ({}) is not found".format(variable_name)
+        super().__init__(self.message)
+
+
 def is_callable(obj):
     """Checks that object is callable (needed for default values)"""
     return callable(obj)
@@ -36,6 +47,7 @@ class Field:
         provider: AbstractProvider = DEFAULT_PROVIDER,
         caster: AbstractCaster = DEFAULT_CASTER,
     ):
+        self._name = name
         self._value = provider.get(name)
         self._default = default
         self._caster = caster
@@ -44,7 +56,7 @@ class Field:
     def value(self):
         if not self._value:
             if not self._default:
-                raise ValueError("Variable is not found")
+                raise VariableNotFoundError(self._name)
             if is_callable(self._default):
                 return self._default()
             else:
@@ -98,4 +110,11 @@ class Config:
             setattr(self, obj.name_to_set, obj.obj.value)
 
 
-__all__ = ("Config", "field", "AbstractProvider", "EnvironmentProvider")
+__all__ = (
+    "Config",
+    "field",
+    "AbstractProvider",
+    "EnvironmentProvider",
+    "BetterconfError",
+    "VariableNotFoundError",
+)
