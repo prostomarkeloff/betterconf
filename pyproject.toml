@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterconf"
-version = "1.9"
+version = "2.0"
 description = "Minimalistic Python library for your configs."
 authors = ["prostomarkeloff"]
 license = "MIT"
