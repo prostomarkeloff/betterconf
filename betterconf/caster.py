@@ -1,5 +1,7 @@
 import typing
 
+VT = typing.TypeVar("VT")
+
 
 class AbstractCaster:
     def cast(self, val: str):
@@ -8,9 +10,9 @@ class AbstractCaster:
 
 
 class ConstantCaster(AbstractCaster, typing.Generic[VT]):
-    
-    ABLE_TO_CAST = {}
-    
+
+    ABLE_TO_CAST: typing.Dict[str, typing.Any] = {}
+
     def cast(self, val: str) -> typing.Union[str, VT]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
         converted = self.ABLE_TO_CAST.get(val.lower())
@@ -18,6 +20,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
             return val
         else:
             return converted
+
 
 class BoolCaster(ConstantCaster):
 
