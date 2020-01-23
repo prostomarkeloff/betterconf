@@ -7,16 +7,18 @@ class AbstractCaster:
         raise NotImplementedError()
 
 
-class BoolCaster(AbstractCaster):
-
-    ABLE_TO_CAST = {"true": True, "false": False}
-
-    def cast(self, val: str) -> typing.Union[str, bool]:
-        as_bool = self.ABLE_TO_CAST.get(val.lower())
-        if not as_bool:
+class ConstantCaster(AbstractCaster, typing.Generic[VT]):
+    def cast(self, val: str) -> typing.Union[str, VT]:
+        """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
+        converted = self.ABLE_TO_CAST.get(val.lower())
+        if not converted:
             return val
         else:
-            return as_bool
+            return converted
+
+class BoolCaster(ConstantCaster):
+
+    ABLE_TO_CAST = {"true": True, "false": False}
 
 
 class IntCaster(AbstractCaster):
@@ -39,4 +41,4 @@ to_bool = BoolCaster()
 to_int = IntCaster()
 DEFAULT_CASTER = NothingCaster()
 
-__all__ = ("to_bool", "to_int", "AbstractCaster", "DEFAULT_CASTER")
+__all__ = ("to_bool", "to_int", "AbstractCaster", "ConstantCaster", "DEFAULT_CASTER")
