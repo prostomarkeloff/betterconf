@@ -8,6 +8,9 @@ class AbstractCaster:
 
 
 class ConstantCaster(AbstractCaster, typing.Generic[VT]):
+    
+    ABLE_TO_CAST = {}
+    
     def cast(self, val: str) -> typing.Union[str, VT]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
         converted = self.ABLE_TO_CAST.get(val.lower())
