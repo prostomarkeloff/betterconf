@@ -4,6 +4,8 @@ import typing
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
 
+_NO_DEFAULT = object()
+
 
 class BetterconfError(Exception):
     pass
@@ -43,7 +45,7 @@ class Field:
     def __init__(
         self,
         name: str,
-        default: typing.Optional[typing.Any] = None,
+        default: typing.Optional[typing.Any] = _NO_DEFAULT,
         provider: AbstractProvider = DEFAULT_PROVIDER,
         caster: AbstractCaster = DEFAULT_CASTER,
     ):
@@ -55,7 +57,7 @@ class Field:
     @property
     def value(self):
         if not self._value:
-            if not self._default:
+            if self._default is _NO_DEFAULT:
                 raise VariableNotFoundError(self._name)
             if is_callable(self._default):
                 return self._default()
