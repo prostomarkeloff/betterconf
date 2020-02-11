@@ -73,7 +73,7 @@ class FieldInfo(typing.NamedTuple):
 
 def field(
     name: str,
-    default: typing.Optional[typing.Any] = None,
+    default: typing.Optional[typing.Any] = _NO_DEFAULT,
     provider: AbstractProvider = DEFAULT_PROVIDER,
     caster: AbstractCaster = DEFAULT_CASTER,
 ) -> Field:
