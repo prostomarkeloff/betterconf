@@ -11,15 +11,18 @@ class AbstractCaster:
 
 class ConstantCaster(AbstractCaster, typing.Generic[VT]):
 
-    ABLE_TO_CAST: typing.Dict[str, typing.Any] = {}
+    ABLE_TO_CAST: typing.Dict[typing.Union[str, typing.Tuple[str]], typing.Any] = {}
 
     def cast(self, val: str) -> typing.Union[str, VT]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
-        converted = self.ABLE_TO_CAST.get(val.lower())
-        if not converted:
-            return val
-        else:
+        if val in self.ABLE_TO_CAST.keys():
+            converted = self.ABLE_TO_CAST.get(val.lower())
             return converted
+        else:
+            for key in self.ABLE_TO_CAST.keys():
+                if isinstance(key, tuple) and val.lower() in key:
+                    return self.ABLE_TO_CAST[key]
+            return val
 
 
 class BoolCaster(ConstantCaster):
