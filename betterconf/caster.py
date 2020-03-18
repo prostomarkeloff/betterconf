@@ -15,7 +15,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
 
     def cast(self, val: str) -> typing.Union[str, VT]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
-        if val in self.ABLE_TO_CAST.keys():
+        if val in self.ABLE_TO_CAST:
             converted = self.ABLE_TO_CAST.get(val.lower())
             return converted
         else:
