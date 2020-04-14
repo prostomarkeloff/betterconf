@@ -4,7 +4,7 @@ VT = typing.TypeVar("VT")
 
 
 class AbstractCaster:
-    def cast(self, val: str):
+    def cast(self, val: str) -> typing.Any:
         """Try to cast or return val"""
         raise NotImplementedError()
 
