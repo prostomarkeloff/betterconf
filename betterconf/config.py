@@ -44,21 +44,25 @@ DEFAULT_PROVIDER = EnvironmentProvider()
 class Field:
     def __init__(
         self,
-        name: str,
+        name: typing.Optional[str] = None,
         default: typing.Optional[typing.Any] = _NO_DEFAULT,
         provider: AbstractProvider = DEFAULT_PROVIDER,
         caster: AbstractCaster = DEFAULT_CASTER,
     ):
-        self._name = name
-        self._value = provider.get(name)
+        self.name = name
+        self._provider = provider
+        self._value = None
         self._default = default
         self._caster = caster
 
     @property
     def value(self):
+        if self.name is None:
+            raise VariableNotFoundError('no name')
+        self._value = self._provider.get(self.name)
         if not self._value:
             if self._default is _NO_DEFAULT:
-                raise VariableNotFoundError(self._name)
+                raise VariableNotFoundError(self.name)
             if is_callable(self._default):
                 return self._default()
             else:
@@ -71,8 +75,13 @@ class FieldInfo(typing.NamedTuple):
     obj: Field
 
 
+class SubConfigInfo(typing.NamedTuple):
+    name_to_set: str
+    obj: type
+
+
 def field(
-    name: str,
+    name: typing.Optional[str] = None,
     default: typing.Optional[typing.Any] = _NO_DEFAULT,
     provider: AbstractProvider = DEFAULT_PROVIDER,
     caster: AbstractCaster = DEFAULT_CASTER,
@@ -89,27 +98,49 @@ def is_dunder(name: str) -> bool:
 
 def parse_objects(
     obj_to_parse: typing.Union[typing.Type["Config"], "Config"]
-) -> typing.List[FieldInfo]:
+) -> typing.List[typing.Union[FieldInfo, SubConfigInfo]]:
     result = []
     for var in dir(obj_to_parse):
         name_to_set = var
-        obj = getattr(obj_to_parse, var)
-        if not isinstance(obj, Field):
-            continue
+        obj: typing.Any = getattr(obj_to_parse, var)
         if is_dunder(name_to_set):
             continue
-        result.append(FieldInfo(name_to_set=name_to_set, obj=obj))
+        if isinstance(obj, Field):
+            result.append(FieldInfo(name_to_set=name_to_set, obj=obj))
+        elif type(obj) is type:
+            result.append(SubConfigInfo(name_to_set=name_to_set, obj=obj))
     return result
 
 
 class Config:
+    _prefix_: typing.Optional[str] = None
+
     def __init__(self, **to_override):
-        result = parse_objects(self)
+        self._init_fields(self._prefix_, self, **to_override)
+
+    @classmethod
+    def _init_fields(cls, path: str, config: typing.Union['Config', type], **to_override):
+        """
+        Put the value in the configs
+        :param path: path to config
+        :param config:
+        :return:
+        """
+        path = f'{path}.' if path else ''
+        result = parse_objects(config)
         for obj in result:
             if obj.name_to_set in to_override:
-                setattr(self, obj.name_to_set, to_override.get(obj.name_to_set))
+                setattr(config, obj.name_to_set, to_override.get(obj.name_to_set))
                 continue
-            setattr(self, obj.name_to_set, obj.obj.value)
+            elif isinstance(obj, SubConfigInfo):
+                _path = f'{path}{obj.name_to_set}'.replace('.', '_').upper()
+                sub_config = cls._init_fields(_path, obj.obj)
+                setattr(config, obj.name_to_set, sub_config)
+            else:
+                if obj.obj.name is None:
+                    obj.obj.name = f'{path}{obj.name_to_set}'.replace('.', '_').upper()
+                setattr(config, obj.name_to_set, obj.obj.value)
+        return config
 
 
 __all__ = (
