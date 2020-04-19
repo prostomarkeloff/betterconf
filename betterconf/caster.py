@@ -32,7 +32,10 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
 
 class BoolCaster(ConstantCaster):
 
-    ABLE_TO_CAST = {"true": True, "false": False}
+    ABLE_TO_CAST = {
+        "true": True, '1': True,
+        "false": False, '0': False,
+    }
 
 
 class IntCaster(AbstractCaster):

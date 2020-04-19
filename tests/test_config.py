@@ -4,14 +4,33 @@ import pytest
 
 from betterconf import Config
 from betterconf import field
-from betterconf.caster import AbstractCaster
+from betterconf.caster import AbstractCaster, ConstantCaster, IntCaster
 from betterconf.caster import to_bool
 from betterconf.caster import to_int
-from betterconf.config import AbstractProvider
+from betterconf.config import AbstractProvider, Field
 from betterconf.config import VariableNotFoundError
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
+
+
+class TestConfig(Config):
+    debug = field('DEBUG', default=False, caster=to_bool)
+
+    class Sub1Config:
+        class Sub2Config:
+            config_1 = field(default='base.mail.com')
+            config_2 = field(default='465')
+            config_3 = field(default='test')
+
+
+class ProdConfig(TestConfig):
+    _prefix_ = 'PROD'
+
+    class Sub1Config(TestConfig.Sub1Config):
+        class Sub2Config(TestConfig.Sub1Config.Sub2Config):
+            config_1 = field(default='prod.mail.com')
+            config_2 = field(default='465')
 
 
 def test_not_exist():
@@ -19,7 +38,7 @@ def test_not_exist():
         var1 = field(VAR_1)
 
     with pytest.raises(VariableNotFoundError):
-        cfg = ConfigBad()
+        ConfigBad()
 
 
 def test_exist():
@@ -92,3 +111,61 @@ def test_own_caster():
 
     cfg = MyConfig()
     assert cfg.text == "text.with.dashes"
+
+
+def test_default_name_field():
+    os.environ['DEBUG'] = 'true'
+    os.environ['SUB1CONFIG_SUB2CONFIG_CONFIG_1'] = 'test.mail.com'
+    os.environ['PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2'] = '100202'
+
+    test_config = TestConfig()
+    prod_config = ProdConfig()
+
+    assert test_config.debug is True
+    assert test_config.Sub1Config.Sub2Config.config_1 == 'test.mail.com'
+    assert prod_config.Sub1Config.Sub2Config.config_2 == '100202'
+
+
+def test_required_fields():
+    class BaseConfig(Config):
+        config_1 = field()
+
+    with pytest.raises(VariableNotFoundError):
+        BaseConfig()
+
+
+def test_fiend_name_is_none():
+    with pytest.raises(VariableNotFoundError):
+        Field().value()
+
+
+def test_raise_abstract_provider():
+    with pytest.raises(NotImplementedError):
+        AbstractProvider().get('test')
+
+
+def test_raise_abstract_caster():
+    with pytest.raises(NotImplementedError):
+        AbstractCaster().cast('test')
+
+
+def test_constant_caster():
+    constant_caster = ConstantCaster()
+
+    constant_caster.ABLE_TO_CAST = {
+        ('key_1', 'key_2'): 'test'
+    }
+    assert constant_caster.cast('key_2') == 'test'
+
+    constant_caster.ABLE_TO_CAST = {
+        'key_1': 'test'
+    }
+    assert constant_caster.cast('Key_1') == 'test'
+
+    assert constant_caster.cast('key') == 'key'
+
+
+def test_raises_int_caster():
+    int_caster = IntCaster()
+    assert int_caster.cast('test') == 'test'
+
