@@ -7,7 +7,7 @@ from betterconf import field
 from betterconf.caster import AbstractCaster, ConstantCaster, IntCaster
 from betterconf.caster import to_bool
 from betterconf.caster import to_int
-from betterconf.config import AbstractProvider, Field
+from betterconf.config import AbstractProvider, Field, as_dict
 from betterconf.config import VariableNotFoundError
 
 VAR_1 = "hello"
@@ -31,6 +31,17 @@ class ProdConfig(TestConfig):
         class Sub2Config(TestConfig.Sub1Config.Sub2Config):
             config_1 = field(default='prod.mail.com')
             config_2 = field(default='465')
+
+
+@pytest.fixture
+def update_environ():
+    os.environ['DEBUG'] = 'true'
+    os.environ['SUB1CONFIG_SUB2CONFIG_CONFIG_1'] = 'test.mail.com'
+    os.environ['PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2'] = '100202'
+    yield
+    os.environ.pop('DEBUG', None)
+    os.environ.pop('SUB1CONFIG_SUB2CONFIG_CONFIG_1', None)
+    os.environ.pop('PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2', None)
 
 
 def test_not_exist():
@@ -113,11 +124,7 @@ def test_own_caster():
     assert cfg.text == "text.with.dashes"
 
 
-def test_default_name_field():
-    os.environ['DEBUG'] = 'true'
-    os.environ['SUB1CONFIG_SUB2CONFIG_CONFIG_1'] = 'test.mail.com'
-    os.environ['PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2'] = '100202'
-
+def test_default_name_field(update_environ):
     test_config = TestConfig()
     prod_config = ProdConfig()
 
@@ -169,3 +176,18 @@ def test_raises_int_caster():
     int_caster = IntCaster()
     assert int_caster.cast('test') == 'test'
 
+
+def test_to_dict():
+    config = ProdConfig()
+
+    assert as_dict(config) == {
+        '_prefix_': 'PROD',
+        'Sub1Config': {
+            'Sub2Config': {
+                'config_1': 'prod.mail.com',
+                'config_2': '465',
+                'config_3': 'test'
+            },
+        },
+        'debug': False
+    }
