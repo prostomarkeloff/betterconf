@@ -4,7 +4,7 @@ import typing
 from betterconf import Config
 from betterconf import field
 from betterconf.caster import to_bool, ConstantCaster
-from betterconf.config import VariableNotFoundError
+from betterconf.config import VariableNotFoundError, as_dict
 
 
 class BaseConfig(Config):
@@ -44,10 +44,9 @@ class TypeConfig(ConstantCaster):
 
 
 if __name__ == "__main__":
-    config_class: typing.Type[typing.Union[Test, Prod]] = field('TYPE_CONFIG', caster=TypeConfig(), default=Test).value
-
     try:
-        config: typing.Union[Test, Prod] = config_class
+        config: typing.Union[Test, Prod] = field('TYPE_CONFIG', caster=TypeConfig(), default=Test).value
+        print(as_dict(config))
         print(f'Mode debug: {config.debug}. SMTP login: {config.Integration.SMTP.login}')
     except VariableNotFoundError as ex:
         print(ex.message)

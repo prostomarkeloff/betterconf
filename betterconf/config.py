@@ -96,15 +96,35 @@ def is_dunder(name: str) -> bool:
         return False
 
 
+def as_dict(cfg: typing.Union['Config', type]) -> dict:
+    """
+    config serialization
+    :param cfg:
+    :return:
+    """
+    result = dict()
+    for i_name in dir(cfg):
+        if is_dunder(i_name):
+            continue
+        i_var = getattr(cfg, i_name)
+        if is_callable(i_var):
+            continue
+        if hasattr(i_var, '__dict__'):
+            result[i_name] = as_dict(i_var)
+            continue
+        result[i_name] = i_var
+    return result
+
+
 def parse_objects(
     obj_to_parse: typing.Union[typing.Type["Config"], "Config"]
 ) -> typing.List[typing.Union[FieldInfo, SubConfigInfo]]:
     result = []
     for var in dir(obj_to_parse):
         name_to_set = var
-        obj: typing.Any = getattr(obj_to_parse, var)
         if is_dunder(name_to_set):
             continue
+        obj: typing.Any = getattr(obj_to_parse, var)
         if isinstance(obj, Field):
             result.append(FieldInfo(name_to_set=name_to_set, obj=obj))
         elif type(obj) is type:
@@ -126,6 +146,7 @@ class Config:
         :param config:
         :return:
         """
+        config = config() if type(config) is type else config
         path = f'{path}.' if path else ''
         result = parse_objects(config)
         for obj in result:
