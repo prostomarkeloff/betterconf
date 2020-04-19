@@ -127,6 +127,11 @@ class NoValuesSet:
 
 class MetaConfig(type):
     def __new__(mcs, class_name, bases, attrs):
+        attrs['__fields__'] = {
+            i_key: i_val
+            for i_key, i_val in attrs.items()
+            if isinstance(i_val, Field) and not is_dunder(i_key)
+        }
         new_config = super().__new__(mcs, class_name, bases, attrs)
         prefix: str = str(attrs.get('__prefix__', 'APP')).upper()
         mcs.update(class_name, prefix, new_config)
@@ -163,13 +168,10 @@ def parse_objects(
     obj_to_parse: typing.Union[typing.Type["Config"], "Config"]
 ) -> typing.List[FieldInfo]:
     result = []
-    for var in dir(obj_to_parse):
+    for var in getattr(obj_to_parse, '__fields__', {}):
         name_to_set = var
         obj = getattr(obj_to_parse, var)
-        if not isinstance(obj, Field):
-            continue
-        if is_dunder(name_to_set):
-            continue
+        obj = obj.value if isinstance(obj, Field) else obj
         result.append(FieldInfo(name_to_set=name_to_set, obj=obj))
     return result
 
@@ -181,7 +183,7 @@ class Config(metaclass=MetaConfig):
             if obj.name_to_set in to_override:
                 setattr(self, obj.name_to_set, to_override.get(obj.name_to_set))
                 continue
-            setattr(self, obj.name_to_set, obj.obj.value)
+            setattr(self, obj.name_to_set, obj.obj)
 
     @classmethod
     def required_fields(cls) -> None:
