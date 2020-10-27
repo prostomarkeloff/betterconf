@@ -14,7 +14,9 @@ class BetterconfError(Exception):
 class VariableNotFoundError(BetterconfError):
     def __init__(self, variable_name: str):
         self.var_name = variable_name
-        self.message = "Variable ({}) was not found in the environment".format(variable_name)
+        self.message = "Variable ({}) was not found in the environment".format(
+            variable_name
+        )
         super().__init__(self.message)
 
 
@@ -58,7 +60,7 @@ class Field:
     @property
     def value(self):
         if self.name is None:
-            raise VariableNotFoundError('no name')
+            raise VariableNotFoundError("no name")
         self._value = self._provider.get(self.name)
         if not self._value:
             if self._default is _NO_DEFAULT:
@@ -96,7 +98,7 @@ def is_dunder(name: str) -> bool:
         return False
 
 
-def as_dict(cfg: typing.Union['Config', type]) -> dict:
+def as_dict(cfg: typing.Union["Config", type]) -> dict:
     """
     config serialization
     :param cfg:
@@ -109,7 +111,7 @@ def as_dict(cfg: typing.Union['Config', type]) -> dict:
         i_var = getattr(cfg, i_name)
         if is_callable(i_var):
             continue
-        if hasattr(i_var, '__dict__'):
+        if hasattr(i_var, "__dict__"):
             result[i_name] = as_dict(i_var)
             continue
         result[i_name] = i_var
@@ -139,7 +141,9 @@ class Config:
         self._init_fields(self._prefix_, self, **to_override)
 
     @classmethod
-    def _init_fields(cls, path: str, config: typing.Union['Config', type], **to_override):
+    def _init_fields(
+        cls, path: str, config: typing.Union["Config", type], **to_override
+    ):
         """
         Put the value in the configs
         :param path: path to config
@@ -147,19 +151,19 @@ class Config:
         :return:
         """
         config = config() if type(config) is type else config
-        path = f'{path}.' if path else ''
+        path = f"{path}." if path else ""
         result = parse_objects(config)
         for obj in result:
             if obj.name_to_set in to_override:
                 setattr(config, obj.name_to_set, to_override.get(obj.name_to_set))
                 continue
             elif isinstance(obj, SubConfigInfo):
-                _path = f'{path}{obj.name_to_set}'.replace('.', '_').upper()
+                _path = f"{path}{obj.name_to_set}".replace(".", "_").upper()
                 sub_config = cls._init_fields(_path, obj.obj)
                 setattr(config, obj.name_to_set, sub_config)
             else:
                 if obj.obj.name is None:
-                    obj.obj.name = f'{path}{obj.name_to_set}'.replace('.', '_').upper()
+                    obj.obj.name = f"{path}{obj.name_to_set}".replace(".", "_").upper()
                 setattr(config, obj.name_to_set, obj.obj.value)
         return config
 
