@@ -14,7 +14,7 @@ class BetterconfError(Exception):
 class VariableNotFoundError(BetterconfError):
     def __init__(self, variable_name: str):
         self.var_name = variable_name
-        self.message = "Variable ({}) was not found in the environment".format(
+        self.message = "Variable ({}) hasn't been found".format(
             variable_name
         )
         super().__init__(self.message)
