@@ -4,6 +4,9 @@ install:
 	pip install poetry
 	poetry install
 
+test:
+	$(py) pytest
+
 black:
 	$(py) black betterconf/
 
