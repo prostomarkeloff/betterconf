@@ -1,12 +1,17 @@
-black:
-	black betterconf/
+py := poetry run
 
 install:
 	pip install poetry
 	poetry install
 
+test:
+	$(py) pytest
+
+black:
+	$(py) black betterconf/
+
 pre-commit:
-	pre-commit install
+	$(py) pre-commit install
 
 mypy:
-	mypy betterconf/
+	$(py) mypy betterconf/
