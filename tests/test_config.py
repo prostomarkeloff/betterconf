@@ -9,6 +9,7 @@ from betterconf.caster import to_bool
 from betterconf.caster import to_int
 from betterconf.config import AbstractProvider, Field, as_dict
 from betterconf.config import VariableNotFoundError
+from betterconf.exceptions import ImpossibleToCastError
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
@@ -169,12 +170,12 @@ def test_constant_caster():
     }
     assert constant_caster.cast('Key_1') == 'test'
 
-    assert constant_caster.cast('key') == 'key'
+    assert isinstance(constant_caster.cast('key'), ImpossibleToCastError)
 
 
 def test_raises_int_caster():
     int_caster = IntCaster()
-    assert int_caster.cast('test') == 'test'
+    assert isinstance(int_caster.cast('test'), ImpossibleToCastError)
 
 
 def test_to_dict():
