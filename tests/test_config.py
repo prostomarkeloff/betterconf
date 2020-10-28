@@ -166,12 +166,14 @@ def test_constant_caster():
     constant_caster.ABLE_TO_CAST = {"key_1": "test"}
     assert constant_caster.cast("Key_1") == "test"
 
-    assert isinstance(constant_caster.cast("key"), ImpossibleToCastError)
+    with pytest.raises(ImpossibleToCastError):
+        assert constant_caster.cast("key")
 
 
 def test_raises_int_caster():
     int_caster = IntCaster()
-    assert isinstance(int_caster.cast("test"), ImpossibleToCastError)
+    with pytest.raises(ImpossibleToCastError):
+        int_caster.cast("test")
 
 
 def test_to_dict():

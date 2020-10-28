@@ -59,13 +59,15 @@ class Field:
                 return self._default()
             else:
                 return self._default
-        casted = self._caster.cast(self._value)
-        if isinstance(casted, ImpossibleToCastError):
+        try:
+            casted = self._caster.cast(self._value)
+
+        except ImpossibleToCastError as e:
             if self._ignore_caster_error:
-                return casted.val
+                return e.val
 
             else:
-                raise casted
+                raise e
 
         else:
             return casted

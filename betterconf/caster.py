@@ -29,7 +29,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
                     return self.ABLE_TO_CAST[key]
                 elif isinstance(key, str) and val.lower() == key:
                     return self.ABLE_TO_CAST[key]
-            return ImpossibleToCastError(val, self)
+            raise ImpossibleToCastError(val, self)
 
 
 class BoolCaster(ConstantCaster):
@@ -53,7 +53,7 @@ class IntCaster(AbstractCaster):
             as_int = int(val)
             return as_int
         except ValueError:
-            return ImpossibleToCastError(val, self)
+            raise ImpossibleToCastError(val, self)
 
 
 class NothingCaster(AbstractCaster):
