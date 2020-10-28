@@ -8,7 +8,7 @@ test:
 	$(py) pytest
 
 black:
-	$(py) black betterconf/
+	$(py) black betterconf/ tests/
 
 pre-commit:
 	$(py) pre-commit install
