@@ -9,39 +9,40 @@ from betterconf.caster import to_bool
 from betterconf.caster import to_int
 from betterconf.config import AbstractProvider, Field, as_dict
 from betterconf.config import VariableNotFoundError
+from betterconf.exceptions import ImpossibleToCastError
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
 
 
 class TestConfig(Config):
-    debug = field('DEBUG', default=False, caster=to_bool)
+    debug = field("DEBUG", default=False, caster=to_bool)
 
     class Sub1Config:
         class Sub2Config:
-            config_1 = field(default='base.mail.com')
-            config_2 = field(default='465')
-            config_3 = field(default='test')
+            config_1 = field(default="base.mail.com")
+            config_2 = field(default="465")
+            config_3 = field(default="test")
 
 
 class ProdConfig(TestConfig):
-    _prefix_ = 'PROD'
+    _prefix_ = "PROD"
 
     class Sub1Config(TestConfig.Sub1Config):
         class Sub2Config(TestConfig.Sub1Config.Sub2Config):
-            config_1 = field(default='prod.mail.com')
-            config_2 = field(default='465')
+            config_1 = field(default="prod.mail.com")
+            config_2 = field(default="465")
 
 
 @pytest.fixture
 def update_environ():
-    os.environ['DEBUG'] = 'true'
-    os.environ['SUB1CONFIG_SUB2CONFIG_CONFIG_1'] = 'test.mail.com'
-    os.environ['PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2'] = '100202'
+    os.environ["DEBUG"] = "true"
+    os.environ["SUB1CONFIG_SUB2CONFIG_CONFIG_1"] = "test.mail.com"
+    os.environ["PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2"] = "100202"
     yield
-    os.environ.pop('DEBUG', None)
-    os.environ.pop('SUB1CONFIG_SUB2CONFIG_CONFIG_1', None)
-    os.environ.pop('PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2', None)
+    os.environ.pop("DEBUG", None)
+    os.environ.pop("SUB1CONFIG_SUB2CONFIG_CONFIG_1", None)
+    os.environ.pop("PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2", None)
 
 
 def test_not_exist():
@@ -129,8 +130,8 @@ def test_default_name_field(update_environ):
     prod_config = ProdConfig()
 
     assert test_config.debug is True
-    assert test_config.Sub1Config.Sub2Config.config_1 == 'test.mail.com'
-    assert prod_config.Sub1Config.Sub2Config.config_2 == '100202'
+    assert test_config.Sub1Config.Sub2Config.config_1 == "test.mail.com"
+    assert prod_config.Sub1Config.Sub2Config.config_2 == "100202"
 
 
 def test_required_fields():
@@ -148,46 +149,44 @@ def test_fiend_name_is_none():
 
 def test_raise_abstract_provider():
     with pytest.raises(NotImplementedError):
-        AbstractProvider().get('test')
+        AbstractProvider().get("test")
 
 
 def test_raise_abstract_caster():
     with pytest.raises(NotImplementedError):
-        AbstractCaster().cast('test')
+        AbstractCaster().cast("test")
 
 
 def test_constant_caster():
     constant_caster = ConstantCaster()
 
-    constant_caster.ABLE_TO_CAST = {
-        ('key_1', 'key_2'): 'test'
-    }
-    assert constant_caster.cast('key_2') == 'test'
+    constant_caster.ABLE_TO_CAST = {("key_1", "key_2"): "test"}
+    assert constant_caster.cast("key_2") == "test"
 
-    constant_caster.ABLE_TO_CAST = {
-        'key_1': 'test'
-    }
-    assert constant_caster.cast('Key_1') == 'test'
+    constant_caster.ABLE_TO_CAST = {"key_1": "test"}
+    assert constant_caster.cast("Key_1") == "test"
 
-    assert constant_caster.cast('key') == 'key'
+    with pytest.raises(ImpossibleToCastError):
+        assert constant_caster.cast("key")
 
 
 def test_raises_int_caster():
     int_caster = IntCaster()
-    assert int_caster.cast('test') == 'test'
+    with pytest.raises(ImpossibleToCastError):
+        int_caster.cast("test")
 
 
 def test_to_dict():
     config = ProdConfig()
 
     assert as_dict(config) == {
-        '_prefix_': 'PROD',
-        'Sub1Config': {
-            'Sub2Config': {
-                'config_1': 'prod.mail.com',
-                'config_2': '465',
-                'config_3': 'test'
+        "_prefix_": "PROD",
+        "Sub1Config": {
+            "Sub2Config": {
+                "config_1": "prod.mail.com",
+                "config_2": "465",
+                "config_3": "test",
             },
         },
-        'debug': False
+        "debug": False,
     }

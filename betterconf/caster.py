@@ -1,5 +1,7 @@
 import typing
 
+from betterconf.exceptions import ImpossibleToCastError
+
 VT = typing.TypeVar("VT")
 
 
@@ -15,7 +17,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
         typing.Union[str, typing.Tuple[str, ...]], typing.Any
     ] = {}
 
-    def cast(self, val: str) -> typing.Union[str, VT]:
+    def cast(self, val: str) -> typing.Union[VT, typing.NoReturn]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
         if val in self.ABLE_TO_CAST:
             converted = self.ABLE_TO_CAST.get(val.lower())
@@ -27,7 +29,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
                     return self.ABLE_TO_CAST[key]
                 elif isinstance(key, str) and val.lower() == key:
                     return self.ABLE_TO_CAST[key]
-            return val
+            raise ImpossibleToCastError(val, self)
 
 
 class BoolCaster(ConstantCaster):
@@ -46,12 +48,12 @@ class BoolCaster(ConstantCaster):
 
 
 class IntCaster(AbstractCaster):
-    def cast(self, val: str) -> typing.Union[str, int]:
+    def cast(self, val: str) -> typing.Union[int, typing.NoReturn]:
         try:
             as_int = int(val)
             return as_int
         except ValueError:
-            return val
+            raise ImpossibleToCastError(val, self)
 
 
 class NothingCaster(AbstractCaster):

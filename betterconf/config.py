@@ -3,21 +3,9 @@ import typing
 
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
+from betterconf.exceptions import VariableNotFoundError, ImpossibleToCastError
 
 _NO_DEFAULT = object()
-
-
-class BetterconfError(Exception):
-    pass
-
-
-class VariableNotFoundError(BetterconfError):
-    def __init__(self, variable_name: str):
-        self.var_name = variable_name
-        self.message = "Variable ({}) hasn't been found".format(
-            variable_name
-        )
-        super().__init__(self.message)
 
 
 def is_callable(obj):
@@ -50,12 +38,14 @@ class Field:
         default: typing.Optional[typing.Any] = _NO_DEFAULT,
         provider: AbstractProvider = DEFAULT_PROVIDER,
         caster: AbstractCaster = DEFAULT_CASTER,
+        ignore_caster_error: bool = False,
     ):
         self.name = name
         self._provider = provider
         self._value = None
         self._default = default
         self._caster = caster
+        self._ignore_caster_error = ignore_caster_error
 
     @property
     def value(self):
@@ -69,7 +59,18 @@ class Field:
                 return self._default()
             else:
                 return self._default
-        return self._caster.cast(self._value)
+        try:
+            casted = self._caster.cast(self._value)
+
+        except ImpossibleToCastError as e:
+            if self._ignore_caster_error:
+                return e.val
+
+            else:
+                raise e
+
+        else:
+            return casted
 
 
 class FieldInfo(typing.NamedTuple):
@@ -87,8 +88,9 @@ def field(
     default: typing.Optional[typing.Any] = _NO_DEFAULT,
     provider: AbstractProvider = DEFAULT_PROVIDER,
     caster: AbstractCaster = DEFAULT_CASTER,
+    ignore_caster_error: bool = False,
 ) -> Field:
-    return Field(name, default, provider, caster)
+    return Field(name, default, provider, caster, ignore_caster_error)
 
 
 def is_dunder(name: str) -> bool:
@@ -173,6 +175,5 @@ __all__ = (
     "field",
     "AbstractProvider",
     "EnvironmentProvider",
-    "BetterconfError",
     "VariableNotFoundError",
 )
