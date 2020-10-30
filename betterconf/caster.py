@@ -68,7 +68,8 @@ class FloatCaster(AbstractCaster):
 
 
 class ListCaster(AbstractCaster):
-    separator: str = ","
+    def __init__(self, separator: str = ","):
+        self.separator = separator
 
     def cast(self, val: str) -> typing.List[typing.Any]:
         if val.endswith(self.separator):
