@@ -4,9 +4,14 @@ import pytest
 
 from betterconf import Config
 from betterconf import field
-from betterconf.caster import AbstractCaster, ConstantCaster, IntCaster
-from betterconf.caster import to_bool
-from betterconf.caster import to_int
+from betterconf.caster import (
+    AbstractCaster,
+    ConstantCaster,
+    IntCaster,
+    FloatCaster,
+    ListCaster,
+)
+from betterconf.caster import to_bool, to_int, to_float, to_list
 from betterconf.config import AbstractProvider, Field, as_dict
 from betterconf.config import VariableNotFoundError
 from betterconf.exceptions import ImpossibleToCastError
@@ -174,6 +179,28 @@ def test_raises_int_caster():
     int_caster = IntCaster()
     with pytest.raises(ImpossibleToCastError):
         int_caster.cast("test")
+
+
+def test_float_caster():
+    float_caster = FloatCaster()
+    assert float_caster.cast("3.14") == 3.14
+    assert float_caster.cast("3,14") == 3.14
+
+    with pytest.raises(ImpossibleToCastError):
+        float_caster.cast("test")
+
+
+def test_list_caster():
+    list_caster = ListCaster()
+    assert list_caster.cast("a") == ["a"]
+    assert list_caster.cast("a,b,c") == ["a", "b", "c"]
+
+    list_caster.separator = ";"
+    assert list_caster.cast("a;b;c;") == ["a", "b", "c"]
+
+    list_caster.separator = ", "
+    assert list_caster.cast("a, b, c") == ["a", "b", "c"]
+    assert list_caster.cast("a, b, c, ") == ["a", "b", "c"]
 
 
 def test_to_dict():
