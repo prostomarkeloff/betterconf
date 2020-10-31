@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from typing import Union, Any, Tuple, List
 
+import toml
+
 DEFAULT_PROVIDER = EnvironmentProvider()
 
 class AbstractProvider:
@@ -30,3 +32,12 @@ class INIProvider(AbstractProvider):
 
     def get(self, name: str) -> str:
         return self.cfg.get(name)
+
+class TOMLProvider(AbstractProvider):
+    """Provider that gets values from .TOML files"""
+
+    def __init__(self, files: Union[str, List[str]]):
+        self.data = toml.load(files)
+
+    def get(self, name: str) -> str:
+        return self.data[name]
