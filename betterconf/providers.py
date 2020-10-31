@@ -1,7 +1,8 @@
 from configparser import ConfigParser
-from typing import Union, Any, Tuple, List
+from typing import Union, Any, Tuple, List, Sequence
 
 import toml
+import os
 
 DEFAULT_PROVIDER = EnvironmentProvider()
 
@@ -27,8 +28,9 @@ class INIProvider(AbstractProvider):
     def __init__(
         self,
         files: Union[str, List[str]],
-        delimiters: Tuple[str] = ("=", ":"),
-        comment_prefixes: Tuple[str] = ("#", ";"),
+        delimiters: Sequence[str] = ("=", ":"),
+        comment_prefixes: Sequence[str] = ("#", ";"),
+        section: str = "config"
     ):
         self.cfg = ConfigParser(
             delimiters=delimiters, comment_prefixes=comment_prefixes
@@ -36,9 +38,10 @@ class INIProvider(AbstractProvider):
         if isinstance(files, str):
             files = [files]
         self.cfg.read(files)
+        self.section = section
 
     def get(self, name: str) -> str:
-        return self.cfg.get(name)
+        return self.cfg.get(self.section, name)
 
 
 class TOMLProvider(AbstractProvider):
