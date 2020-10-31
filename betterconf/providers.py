@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from typing import Union, Any, Tuple, List
 
+DEFAULT_PROVIDER = EnvironmentProvider()
+
 class AbstractProvider:
     """Implement this class and pass to `field`"""
 
