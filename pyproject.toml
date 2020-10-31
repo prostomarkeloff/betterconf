@@ -15,6 +15,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6"
+toml = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
