@@ -5,6 +5,7 @@ import toml
 
 DEFAULT_PROVIDER = EnvironmentProvider()
 
+
 class AbstractProvider:
     """Implement this class and pass to `field`"""
 
@@ -19,19 +20,26 @@ class EnvironmentProvider(AbstractProvider):
     def get(self, name: str) -> Any:
         return os.getenv(name)
 
+
 class INIProvider(AbstractProvider):
     """Provider that gets values from .INI files"""
 
-    def __init__(self, files: Union[str, List[str]],
-                 delimiters: Tuple[str] = ('=', ':'),
-                 comment_prefixes: Tuple[str] = ('#', ';')):
-        self.cfg = ConfigParser(delimiters=delimiters, comment_prefixes=comment_prefixes)
+    def __init__(
+        self,
+        files: Union[str, List[str]],
+        delimiters: Tuple[str] = ("=", ":"),
+        comment_prefixes: Tuple[str] = ("#", ";"),
+    ):
+        self.cfg = ConfigParser(
+            delimiters=delimiters, comment_prefixes=comment_prefixes
+        )
         if isinstance(files, str):
             files = [files]
         self.cfg.read(files)
 
     def get(self, name: str) -> str:
         return self.cfg.get(name)
+
 
 class TOMLProvider(AbstractProvider):
     """Provider that gets values from .TOML files"""
