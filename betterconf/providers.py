@@ -8,7 +8,7 @@ DEFAULT_PROVIDER = EnvironmentProvider()
 class AbstractProvider:
     """Implement this class and pass to `field`"""
 
-    def get(self, name: str) -> typing.Any:
+    def get(self, name: str) -> Any:
         """Return a value or None"""
         raise NotImplementedError()
 
@@ -16,7 +16,7 @@ class AbstractProvider:
 class EnvironmentProvider(AbstractProvider):
     """Default provider. Gets vals from environment"""
 
-    def get(self, name: str) -> typing.Any:
+    def get(self, name: str) -> Any:
         return os.getenv(name)
 
 class INIProvider(AbstractProvider):
@@ -39,5 +39,5 @@ class TOMLProvider(AbstractProvider):
     def __init__(self, files: Union[str, List[str]]):
         self.data = toml.load(files)
 
-    def get(self, name: str) -> str:
+    def get(self, name: str) -> Any:
         return self.data[name]
