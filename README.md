@@ -126,7 +126,7 @@ class MyConfig(Config):
     money = field("MONEY_VAR", caster=to_int)
     name = field("NAME_VAR")
     
-    money_if_a_lot: int = reference_field(money, lambda: m: m * 1000)
+    money_if_a_lot: int = reference_field(money, lambda m: m * 1000)
     greeting: str = compose_field(money, name, lambda m, n: f"Hello, my name is {n} and I'm rich for {m}")
     
 ```
