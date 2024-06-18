@@ -12,7 +12,13 @@ from betterconf.caster import (
     ListCaster,
 )
 from betterconf.caster import to_bool, to_int, to_float, to_list
-from betterconf.config import AbstractProvider, Field, as_dict
+from betterconf.config import (
+    AbstractProvider,
+    Field,
+    as_dict,
+    reference_field,
+    compose_field,
+)
 from betterconf.config import VariableNotFoundError
 from betterconf.exceptions import ImpossibleToCastError
 
@@ -56,6 +62,48 @@ def test_not_exist():
 
     with pytest.raises(VariableNotFoundError):
         ConfigBad()
+
+
+def test_reference_field():
+    class ConfigWithRef2(Config):
+        var1 = field("var1", default=lambda: {"hello": "world"})
+        var2 = reference_field(var1, lambda v: v["hello"])
+
+    cfg = ConfigWithRef2()
+    assert cfg.var2 == "world"
+
+
+def test_compose_field():
+    class ConfigWithCompose(Config):
+        var1 = field("var1", default="John")
+        var2 = compose_field(
+            field("var2", default="hello"),
+            var1,
+            lambda first, second: f"{first} {second}",
+        )
+
+    cfg = ConfigWithCompose()
+    assert cfg.var2 == "hello John"
+
+
+def test_multiple_compose_field():
+
+    class ConfigWithCompose(Config):
+        age = field("age", default=16, caster=to_int)
+        name = field("name", default="John")
+        greeting = compose_field(age, name, lambda a, n: f"My name is {n}. I'm {a}")
+        dream = compose_field(
+            greeting,
+            reference_field(age, lambda a: a + 10),
+            lambda f, s: f"When I was young I said '{f}', but now I'm {s} and I don't say that crap",
+        )
+
+    cfg = ConfigWithCompose()
+    assert cfg.greeting == "My name is John. I'm 16"
+    assert (
+        cfg.dream
+        == "When I was young I said 'My name is John. I'm 16', but now I'm 26 and I don't say that crap"
+    )
 
 
 def test_exist():

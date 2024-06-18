@@ -116,6 +116,21 @@ print(cfg.integer, cfg.boolean, cfg.dots)
 integer=-500 boolean=true dashes=hello-world python our_file.py
 ```
 
+Sometimes we need to reference one field value in another one.
+
+```python
+from betterconf import Config, field, reference_field, compose_field
+from betterconf.caster import to_int
+
+class MyConfig(Config):
+    money = field("MONEY_VAR", caster=to_int)
+    name = field("NAME_VAR")
+    
+    money_if_a_lot: int = reference_field(money, lambda: m: m * 1000)
+    greeting: str = compose_field(money, name, lambda m, n: f"Hello, my name is {n} and I'm rich for {m}")
+    
+```
+
 
 
 ## License

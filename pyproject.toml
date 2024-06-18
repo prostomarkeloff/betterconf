@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterconf"
-version = "2.6.1"
+version = "2.7.0"
 description = "Minimalistic Python library for your configs."
 authors = ["prostomarkeloff"]
 license = "MIT"
@@ -14,13 +14,12 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.8"
 
-[tool.poetry.dev-dependencies]
-black = "^19.10b0"
-pre-commit = "^1.20.0"
-mypy = "^0.761"
-pytest = "^5.3.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+pytest = "^8.2.2"
 
 [build-system]
 requires = ["poetry>=1.0.0"]

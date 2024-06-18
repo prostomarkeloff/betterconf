@@ -1,5 +1,6 @@
 import os
 import typing
+from typing import Callable, Any
 
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
@@ -93,6 +94,23 @@ def field(
     return Field(name, default, provider, caster, ignore_caster_error)
 
 
+def reference_field(
+    field: Field, f: typing.Callable[[typing.Any], typing.Any]
+) -> Field:
+    return Field(name="__betterconf_ref", default=lambda: f(field.value))
+
+
+def compose_field(
+    first_field: Field,
+    second_field: Field,
+    f: typing.Callable[[typing.Any, typing.Any], typing.Any],
+) -> Field:
+    return Field(
+        name="__betterconf_compose",
+        default=lambda: f(first_field.value, second_field.value),
+    )
+
+
 def is_dunder(name: str) -> bool:
     if name.startswith("__") and name.endswith("__"):
         return True
@@ -176,4 +194,6 @@ __all__ = (
     "AbstractProvider",
     "EnvironmentProvider",
     "VariableNotFoundError",
+    "reference_field",
+    "compose_field",
 )
