@@ -105,6 +105,18 @@ def test_multiple_compose_field():
         == "When I was young I said 'My name is John. I'm 16', but now I'm 26 and I don't say that crap"
     )
 
+def test_reference_to_override():
+
+    class ConfigWithReference(Config):
+        var1: int | Field = field("var1", default=4)
+        var2: int = reference_field(var1, lambda v: v*2)
+
+    cfg1 = ConfigWithReference()
+    assert cfg1.var2 == cfg1.var1 * 2
+
+    cfg2 = ConfigWithReference(var1=15)
+    assert cfg2.var2 == cfg2.var1 * 2
+
 
 def test_exist():
     os.environ[VAR_1] = VAR_1_VALUE

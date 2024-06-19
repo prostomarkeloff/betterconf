@@ -175,7 +175,8 @@ class Config:
         result = parse_objects(config)
         for obj in result:
             if obj.name_to_set in to_override:
-                setattr(config, obj.name_to_set, to_override.get(obj.name_to_set))
+                obj.obj._default = to_override.get(obj.name_to_set)
+                setattr(config, obj.name_to_set, obj.obj.value)
                 continue
             elif isinstance(obj, SubConfigInfo):
                 _path = f"{path}{obj.name_to_set}".replace(".", "_").upper()
