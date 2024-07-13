@@ -137,7 +137,7 @@ There is a support for [nested referencing](https://github.com/prostomarkeloff/b
 from betterconf import Config, field, reference_field, compose_field
 
 
-class Cfg.Config):
+class Cfg(Config):
     f1 = field("f1", default=1)
     f2 = field("f2", default=2)
     f3 = field("f3", default=3)
