@@ -131,6 +131,26 @@ class MyConfig(Config):
     
 ```
 
+There is a support for [nested referencing](https://github.com/prostomarkeloff/betterconf/issues/13):
+
+```python
+from betterconf import Config, field, reference_field, compose_field
+
+
+class Cfg.Config):
+    f1 = field("f1", default=1)
+    f2 = field("f2", default=2)
+    f3 = field("f3", default=3)
+    f4 = compose_field(
+        f1,
+        compose_field(f2, f3, lambda v1, v2: (v1, v2)),
+        lambda v1, v23: {"f1": v1, "f2": v23[0], "f3": v23[1]},
+    )
+
+print(Cfg().f4)
+
+```
+
 
 
 ## License
