@@ -1,7 +1,7 @@
 # Minimalistic Python library for your configs.
 
 Betterconf (**better config**) is a Python library for project configuration
-managment. It allows you define your config like a regular Python class.
+management. It allows you define your config like a regular Python class.
 
 Features:
 
@@ -24,6 +24,8 @@ pip install betterconf
 ```
 
 ## How to?
+
+This is a guide written for betterconf 3.x, earlier versions can work differently
 
 Try to write a simple config:
 ```python
@@ -68,7 +70,7 @@ print(cfg.my_var)
 # WOW!
 ```
 
-By default **betterconf** gets all values from `os.environ` but sometimes we need much.
+By default, **betterconf** gets all values from `os.environ` but sometimes we need more.
 You can create own `field's value provider` in minutes:
 
 ```python
@@ -87,7 +89,7 @@ print(cfg.my_var)
 # my_var
 ```
 
-Also we can cast our values to python objects (or just manipulate them):
+Also, we can cast our values to python objects (or just manipulate them):
 
 ```python
 from betterconf import field, Config
@@ -119,15 +121,15 @@ integer=-500 boolean=true dashes=hello-world python our_file.py
 Sometimes we need to reference one field value in another one.
 
 ```python
-from betterconf import Config, field, reference_field, compose_field
+from betterconf import Config, field, reference_field
 from betterconf.caster import to_int
 
 class MyConfig(Config):
     money = field("MONEY_VAR", caster=to_int)
     name = field("NAME_VAR")
     
-    money_if_a_lot: int = reference_field(money, lambda m: m * 1000)
-    greeting: str = compose_field(money, name, lambda m, n: f"Hello, my name is {n} and I'm rich for {m}")
+    money_if_a_lot: int = reference_field(money, func=lambda m: m * 1000)
+    greeting: str = reference_field(money, name, func=lambda m, n: f"Hello, my name is {n} and I'm rich for {m}")
     
 ```
 

@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+import betterconf
 from betterconf import Config
 from betterconf import field
 from betterconf.caster import (
@@ -50,10 +51,25 @@ def update_environ():
     os.environ["DEBUG"] = "true"
     os.environ["SUB1CONFIG_SUB2CONFIG_CONFIG_1"] = "test.mail.com"
     os.environ["PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2"] = "100202"
+    os.environ["NONEFUL_FIELD"] = "None"
+    os.environ["FALSY_FIELD"] = "0"
     yield
     os.environ.pop("DEBUG", None)
     os.environ.pop("SUB1CONFIG_SUB2CONFIG_CONFIG_1", None)
     os.environ.pop("PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2", None)
+
+
+def test_negative_values(update_environ):
+    caster = ConstantCaster()
+    caster.ABLE_TO_CAST = dict(none=None)
+
+    class NegativeConfig(Config):
+        none = field("NONEFUL_FIELD", caster=caster)
+        false = field("FALSY_FIELD", caster=to_int)
+
+    cfg = NegativeConfig()
+    assert cfg.none is None
+    assert (not cfg.false)
 
 
 def test_not_exist():
@@ -67,7 +83,7 @@ def test_not_exist():
 def test_reference_field():
     class ConfigWithRef2(Config):
         var1 = field("var1", default=lambda: {"hello": "world"})
-        var2 = reference_field(var1, lambda v: v["hello"])
+        var2 = reference_field(var1, func=lambda v: v["hello"])
 
     cfg = ConfigWithRef2()
     assert cfg.var2 == "world"
@@ -87,29 +103,28 @@ def test_compose_field():
 
 
 def test_multiple_compose_field():
-
     class ConfigWithCompose(Config):
         age = field("age", default=16, caster=to_int)
         name = field("name", default="John")
         greeting = compose_field(age, name, lambda a, n: f"My name is {n}. I'm {a}")
         dream = compose_field(
             greeting,
-            reference_field(age, lambda a: a + 10),
+            reference_field(age, func=lambda a: a + 10),
             lambda f, s: f"When I was young I said '{f}', but now I'm {s} and I don't say that crap",
         )
 
     cfg = ConfigWithCompose()
     assert cfg.greeting == "My name is John. I'm 16"
     assert (
-        cfg.dream
-        == "When I was young I said 'My name is John. I'm 16', but now I'm 26 and I don't say that crap"
+            cfg.dream
+            == "When I was young I said 'My name is John. I'm 16', but now I'm 26 and I don't say that crap"
     )
 
-def test_reference_to_override():
 
+def test_reference_to_override():
     class ConfigWithReference(Config):
         var1: int | Field = field("var1", default=4)
-        var2: int = reference_field(var1, lambda v: v*2)
+        var2: int = reference_field(var1, func=lambda v: v * 2)
 
     cfg1 = ConfigWithReference()
     assert cfg1.var2 == cfg1.var1 * 2
@@ -117,6 +132,32 @@ def test_reference_to_override():
     cfg2 = ConfigWithReference(var1=15)
     assert cfg2.var2 == cfg2.var1 * 2
 
+def test_instant_value(update_environ):
+    v: bool = betterconf.value("DEBUG", caster=to_bool)
+    assert v is True
+
+def test_reference_many_fields():
+    class ConfigWithManyReferences(Config):
+        var1: int | Field = field("var1", default=4)
+        var2: int | Field = field("var2", default=5)
+        var3: int | Field = field("var3", default=6)
+        var4: int = reference_field(var1, var2, var3, func=lambda v1, v2, v3: v1 * 2 + v2 * 2 + v3 * 3)
+
+    cfg = ConfigWithManyReferences()
+    assert cfg.var4 == (cfg.var1 * 2 + cfg.var2 * 2 + cfg.var3 * 3)
+
+def test_field_as_default():
+    class ConfigWithDefaults(Config):
+        var1 = field(default="Goyda")
+        var2 = field(default=var1)
+
+    cfg = ConfigWithDefaults()
+    assert cfg.var1 == "Goyda"
+    assert cfg.var2 == "Goyda"
+
+    cfg = ConfigWithDefaults(var1="hmm")
+    assert cfg.var1 == "hmm"
+    assert cfg.var2 == "hmm"
 
 def test_exist():
     os.environ[VAR_1] = VAR_1_VALUE
@@ -149,7 +190,7 @@ def test_override():
 def test_own_provider():
     class MyProvider(AbstractProvider):
         def get(self, name: str):
-            return name  # just return name of filed =)
+            return name  # just return name of field =)
 
     provider = MyProvider()
 

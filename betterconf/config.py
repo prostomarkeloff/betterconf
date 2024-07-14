@@ -1,10 +1,10 @@
-import os
 import typing
-from typing import Callable, Any
+import warnings
 
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
 from betterconf.exceptions import VariableNotFoundError, ImpossibleToCastError
+from betterconf.provider import DEFAULT_PROVIDER, AbstractProvider, EnvironmentProvider
 
 _NO_DEFAULT = object()
 
@@ -14,25 +14,12 @@ def is_callable(obj):
     return callable(obj)
 
 
-class AbstractProvider:
-    """Implement this class and pass to `field`"""
-
-    def get(self, name: str) -> typing.Any:
-        """Return a value or None"""
-        raise NotImplementedError()
-
-
-class EnvironmentProvider(AbstractProvider):
-    """Default provider. Gets vals from environment"""
-
-    def get(self, name: str) -> typing.Any:
-        return os.getenv(name)
-
-
-DEFAULT_PROVIDER = EnvironmentProvider()
-
-
 class Field:
+    # NB: fields are:
+    # 1. lazy evaluated (when .value is called, I'm sure like always when initializing), fields are
+    # 2. one-timers: every time the .value is called the recompute their value (that's needed for inheritance or
+    # initializing this config with new params)
+
     def __init__(
         self,
         name: typing.Optional[str] = None,
@@ -48,20 +35,20 @@ class Field:
         self._caster = caster
         self._ignore_caster_error = ignore_caster_error
 
-    @property
-    def value(self):
-        if self.name is None:
-            raise VariableNotFoundError("no name")
-        self._value = self._provider.get(self.name)
-        if not self._value:
+    def _get_value(self):
+        try:
+            if self.name is None:
+                raise VariableNotFoundError("No name")
+            inner_value = self._provider.get(self.name)
+        except VariableNotFoundError as e:
             if self._default is _NO_DEFAULT:
-                raise VariableNotFoundError(self.name)
+                raise e
             if is_callable(self._default):
                 return self._default()
             else:
                 return self._default
         try:
-            casted = self._caster.cast(self._value)
+            casted = self._caster.cast(inner_value)
 
         except ImpossibleToCastError as e:
             if self._ignore_caster_error:
@@ -72,6 +59,14 @@ class Field:
 
         else:
             return casted
+
+    @property
+    def value(self):
+        return self._get_value()
+
+    # can be used as `default=`
+    def __call__(self, *args, **kwargs):
+        return self.value
 
 
 class FieldInfo(typing.NamedTuple):
@@ -84,6 +79,20 @@ class SubConfigInfo(typing.NamedTuple):
     obj: type
 
 
+def value(
+    name: typing.Optional[str] = None,
+    default: typing.Optional[typing.Any] = _NO_DEFAULT,
+    provider: AbstractProvider = DEFAULT_PROVIDER,
+    caster: AbstractCaster = DEFAULT_CASTER,
+    ignore_caster_error: bool = False,
+) -> typing.Any:
+    """
+    Get a field and a value exactly when it's created
+    """
+    f = Field(name, default, provider, caster, ignore_caster_error)
+    return f.value
+
+
 def field(
     name: typing.Optional[str] = None,
     default: typing.Optional[typing.Any] = _NO_DEFAULT,
@@ -91,13 +100,16 @@ def field(
     caster: AbstractCaster = DEFAULT_CASTER,
     ignore_caster_error: bool = False,
 ) -> Field:
+    """
+    Create a field for your config
+    """
     return Field(name, default, provider, caster, ignore_caster_error)
 
 
-def reference_field(
-    field: Field, f: typing.Callable[[typing.Any], typing.Any]
-) -> Field:
-    return Field(name="__betterconf_ref", default=lambda: f(field.value))
+def reference_field(*fields: Field, func: typing.Callable[..., typing.Any]) -> Field:
+    return Field(
+        name="__betterconf_internal", default=lambda: func(*(v.value for v in fields))
+    )
 
 
 def compose_field(
@@ -105,10 +117,11 @@ def compose_field(
     second_field: Field,
     f: typing.Callable[[typing.Any, typing.Any], typing.Any],
 ) -> Field:
-    return Field(
-        name="__betterconf_compose",
-        default=lambda: f(first_field.value, second_field.value),
+    warnings.warn(
+        "The function `compose_field` is deprecated since 3.0.0\nPlease use `reference_field` due to its ability to "
+        "take any count of arguments"
     )
+    return reference_field(first_field, second_field, func=lambda f1, f2: f(f1, f2))
 
 
 def is_dunder(name: str) -> bool:
@@ -197,4 +210,6 @@ __all__ = (
     "VariableNotFoundError",
     "reference_field",
     "compose_field",
+    "as_dict",
+    "Field",  # sometimes useful for typing
 )
