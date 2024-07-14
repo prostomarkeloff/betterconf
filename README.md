@@ -133,26 +133,24 @@ class MyConfig(Config):
     
 ```
 
-There is a support for [nested referencing](https://github.com/prostomarkeloff/betterconf/issues/13):
+There is a builtin support for constant fields and getting field's value on-fly at any place of code:
 
 ```python
-from betterconf import Config, field, reference_field, compose_field
+from betterconf import value, constant_field, Config
+from betterconf.caster import to_int
 
+class Constants(Config):
+    admin_id: int = constant_field(1)
+    timezone: str = constant_field("UTC+3")
+    
+debug: bool = value("DEBUG", default=True)
+print("Current status of debbuging is ", debug)
 
-class Cfg(Config):
-    f1 = field("f1", default=1)
-    f2 = field("f2", default=2)
-    f3 = field("f3", default=3)
-    f4 = compose_field(
-        f1,
-        compose_field(f2, f3, lambda v1, v2: (v1, v2)),
-        lambda v1, v23: {"f1": v1, "f2": v23[0], "f3": v23[1]},
-    )
-
-print(Cfg().f4)
+# betterconf can be used as a casting framework!
+val: int = value(default="123", caster=to_int)
+assert val == 123
 
 ```
-
 
 
 ## License

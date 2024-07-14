@@ -33,7 +33,7 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
             raise ImpossibleToCastError(val, self)
 
 
-class BoolCaster(ConstantCaster):
+class BoolCaster(ConstantCaster[bool]):
 
     ABLE_TO_CAST = {
         "true": True,
@@ -77,7 +77,7 @@ class ListCaster(AbstractCaster):
         return val.split(self.separator)
 
 
-class LoggingLogLevelCaster(ConstantCaster):
+class LoggingLogLevelCaster(ConstantCaster[int]):
     ABLE_TO_CAST = {
         "CRITICAL": logging.CRITICAL,
         "FATAL": logging.FATAL,

@@ -107,9 +107,10 @@ def field(
 
 
 def reference_field(*fields: Field, func: typing.Callable[..., typing.Any]) -> Field:
-    return Field(
-        name="__betterconf_internal", default=lambda: func(*(v.value for v in fields))
-    )
+    return Field(default=lambda: func(*(v.value for v in fields)))
+
+def constant_field(const: typing.Any) -> Field:
+    return Field(default=const)
 
 
 def compose_field(
@@ -210,6 +211,8 @@ __all__ = (
     "VariableNotFoundError",
     "reference_field",
     "compose_field",
+    "value",
+    "constant_field",
     "as_dict",
     "Field",  # sometimes useful for typing
 )
