@@ -89,6 +89,34 @@ print(cfg.my_var)
 # my_var
 ```
 
+You can specify the class' default provider manually:
+
+```python
+from betterconf import field, Config
+from betterconf.config import AbstractProvider
+
+class FancyNameProvider(AbstractProvider):
+    def get(self, name: str) -> str:
+        return f"fancy_{name}"
+    
+class Cfg(Config):
+    _provider_ = FancyNameProvider()
+    
+    val1 = field("val1")
+    val2 = field("val2")
+    
+cfg = Cfg()
+print(cfg.val1, cfg.val2)
+# fancy_val1, fancy_val2
+
+# or you can change the provider at initialization moment
+cfg = Cfg(_provider_=FancyNameProvider())
+...
+
+# However, this won't work with nested configs; their provider will be as it's set in `_provider_` field
+
+```
+
 Also, we can cast our values to python objects (or just manipulate them):
 
 ```python

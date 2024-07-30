@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-import betterconf
 from betterconf import Config
 from betterconf import field
 from betterconf.caster import (
@@ -18,7 +17,7 @@ from betterconf.config import (
     Field,
     as_dict,
     reference_field,
-    compose_field,
+    compose_field, value,
 )
 from betterconf.config import VariableNotFoundError
 from betterconf.exceptions import ImpossibleToCastError
@@ -132,9 +131,40 @@ def test_reference_to_override():
     cfg2 = ConfigWithReference(var1=15)
     assert cfg2.var2 == cfg2.var1 * 2
 
+
+def test_default_provider_for_cfg():
+    class FancyProvider(AbstractProvider):
+        def get(self, name: str) -> str:
+            return f"fancy_{name}"
+
+    class SubFancyProvider(AbstractProvider):
+
+        def get(self, name: str) -> str:
+            return f"subfancy_{name}"
+
+    class MyConfig(Config):
+        _provider_ = FancyProvider()
+
+        val: str = field("value")
+
+        class SubConfig:
+            _provider_ = SubFancyProvider()
+
+            subval: str = field("value")
+
+        class SubConfigWithoutProvider:
+            val: str = field("value")
+
+    cfg = MyConfig()
+    assert cfg.val == "fancy_value"
+    assert cfg.SubConfig.subval == "subfancy_value"
+    assert cfg.SubConfigWithoutProvider.val == "fancy_value"
+
+
 def test_instant_value(update_environ):
-    v: bool = betterconf.value("DEBUG", caster=to_bool)
+    v: bool = value("DEBUG", caster=to_bool)
     assert v is True
+
 
 def test_reference_many_fields():
     class ConfigWithManyReferences(Config):
@@ -145,6 +175,7 @@ def test_reference_many_fields():
 
     cfg = ConfigWithManyReferences()
     assert cfg.var4 == (cfg.var1 * 2 + cfg.var2 * 2 + cfg.var3 * 3)
+
 
 def test_field_as_default():
     class ConfigWithDefaults(Config):
@@ -158,6 +189,7 @@ def test_field_as_default():
     cfg = ConfigWithDefaults(var1="hmm")
     assert cfg.var1 == "hmm"
     assert cfg.var2 == "hmm"
+
 
 def test_exist():
     os.environ[VAR_1] = VAR_1_VALUE
@@ -309,6 +341,7 @@ def test_to_dict():
 
     assert as_dict(config) == {
         "_prefix_": "PROD",
+        "_provider_": {},
         "Sub1Config": {
             "Sub2Config": {
                 "config_1": "prod.mail.com",

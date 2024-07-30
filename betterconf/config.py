@@ -132,14 +132,20 @@ def is_dunder(name: str) -> bool:
         return False
 
 
-def as_dict(cfg: typing.Union["Config", type]) -> dict:
+def as_dict(cfg: typing.Union["Config", type], exclude: typing.Optional[list[str]] = None) -> dict:
     """
     config serialization
     :param cfg:
+    :param exclude:
     :return:
     """
+    if not exclude:
+        exclude = []
+
     result = dict()
     for i_name in dir(cfg):
+        if i_name in exclude:
+            continue
         if is_dunder(i_name):
             continue
         i_var = getattr(cfg, i_name)
@@ -170,13 +176,15 @@ def parse_objects(
 
 class Config:
     _prefix_: typing.Optional[str] = None
+    _provider_: AbstractProvider = DEFAULT_PROVIDER
 
-    def __init__(self, **to_override):
-        self._init_fields(self._prefix_, self, **to_override)
+    def __init__(self, _provider_: typing.Optional[AbstractProvider] = None, **to_override):
+        _provider = _provider_ or self._provider_
+        self._init_fields(self._prefix_, self, _provider, **to_override)
 
     @classmethod
     def _init_fields(
-        cls, path: str, config: typing.Union["Config", type], **to_override
+        cls, path: str, config: typing.Union["Config", type], _provider: AbstractProvider, **to_override
     ):
         """
         Put the value in the configs
@@ -193,12 +201,20 @@ class Config:
                 setattr(config, obj.name_to_set, obj.obj.value)
                 continue
             elif isinstance(obj, SubConfigInfo):
+                obj: SubConfigInfo
                 _path = f"{path}{obj.name_to_set}".replace(".", "_").upper()
-                sub_config = cls._init_fields(_path, obj.obj)
+                # if subconfig has its own default provider we use it
+                # otherwise the default for master config
+                sub_provider = getattr(obj.obj, "_provider_", _provider)
+                sub_config = cls._init_fields(_path, obj.obj, sub_provider)
                 setattr(config, obj.name_to_set, sub_config)
             else:
                 if obj.obj.name is None:
                     obj.obj.name = f"{path}{obj.name_to_set}".replace(".", "_").upper()
+
+                if obj.obj._provider is DEFAULT_PROVIDER and _provider is not DEFAULT_PROVIDER:
+                    obj.obj._provider = _provider
+
                 setattr(config, obj.name_to_set, obj.obj.value)
         return config
 
