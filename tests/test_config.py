@@ -17,7 +17,8 @@ from betterconf.config import (
     Field,
     as_dict,
     reference_field,
-    compose_field, value,
+    compose_field,
+    value,
 )
 from betterconf.config import VariableNotFoundError
 from betterconf.exceptions import ImpossibleToCastError
@@ -68,7 +69,7 @@ def test_negative_values(update_environ):
 
     cfg = NegativeConfig()
     assert cfg.none is None
-    assert (not cfg.false)
+    assert not cfg.false
 
 
 def test_not_exist():
@@ -99,6 +100,66 @@ def test_compose_field():
 
     cfg = ConfigWithCompose()
     assert cfg.var2 == "hello John"
+
+
+def test_experimental_basics(update_environ):
+    from typing import Annotated
+    from betterconf.experimental import betterconf
+    from betterconf import field
+
+    @betterconf
+    class Config:
+        # caster type, alias
+        debug: Annotated[bool, "DEBUG"]
+        value: str = field(default="LOL")
+        meta = field(default=123)
+
+    cfg = Config()
+    assert cfg.debug is True
+    assert cfg.value is not "lol"
+    assert cfg.meta is 123
+
+
+def test_json_provider():
+    from typing import Annotated
+    from betterconf.experimental import betterconf
+    from betterconf.provider import JSONProvider
+    import json
+
+    data = json.dumps(
+        {"DEBUG": True, "name": "Ilaja", "age": 15, "nested": {"status": True, }}
+    )
+
+    @betterconf(
+        provider=JSONProvider.from_string(data, nested_access="::"),
+    )
+    class Config:
+        debug: Annotated[bool, "DEBUG"]
+        nested_status: Annotated[bool, "nested::status"]
+        name: str
+        age: int
+
+    cfg = Config()
+    assert cfg.debug is True
+    assert cfg.name == "Ilaja"
+    assert cfg.age > 10
+
+
+def test_experimental_subconfigs(update_environ):
+    from typing import Annotated
+    from betterconf.experimental import betterconf
+    from betterconf import constant_field
+
+    @betterconf
+    class Config:
+        f = constant_field("ffff")
+
+        class Sub:
+            debug: Annotated[bool, "DEBUG"]
+
+    cfg = Config()
+    assert cfg.f == "ffff"
+    assert cfg.Sub.debug is True
 
 
 def test_multiple_compose_field():
@@ -171,7 +232,9 @@ def test_reference_many_fields():
         var1: int | Field = field("var1", default=4)
         var2: int | Field = field("var2", default=5)
         var3: int | Field = field("var3", default=6)
-        var4: int = reference_field(var1, var2, var3, func=lambda v1, v2, v3: v1 * 2 + v2 * 2 + v3 * 3)
+        var4: int = reference_field(
+            var1, var2, var3, func=lambda v1, v2, v3: v1 * 2 + v2 * 2 + v3 * 3
+        )
 
     cfg = ConfigWithManyReferences()
     assert cfg.var4 == (cfg.var1 * 2 + cfg.var2 * 2 + cfg.var3 * 3)

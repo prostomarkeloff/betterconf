@@ -110,6 +110,14 @@ to_logging_log_level = LoggingLogLevelCaster()
 to_loguru_log_level = LoguruLogLevelCaster()
 DEFAULT_CASTER = NothingCaster()
 
+_BUILTIN_CASTERS = {
+    bool: to_bool,
+    int: to_int,
+    float: to_float,
+    list: to_list,
+    str: DEFAULT_CASTER,  # for type hints
+}
+
 __all__ = (
     "to_bool",
     "to_int",

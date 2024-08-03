@@ -1,5 +1,6 @@
 import typing
 import warnings
+from dataclasses import dataclass
 
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
@@ -69,12 +70,14 @@ class Field:
         return self.value
 
 
-class FieldInfo(typing.NamedTuple):
+@dataclass
+class FieldInfo:
     name_to_set: str
     obj: Field
 
 
-class SubConfigInfo(typing.NamedTuple):
+@dataclass
+class SubConfigInfo:
     name_to_set: str
     obj: type
 
@@ -109,6 +112,7 @@ def field(
 def reference_field(*fields: Field, func: typing.Callable[..., typing.Any]) -> Field:
     return Field(default=lambda: func(*(v.value for v in fields)))
 
+
 def constant_field(const: typing.Any) -> Field:
     return Field(default=const)
 
@@ -126,13 +130,12 @@ def compose_field(
 
 
 def is_dunder(name: str) -> bool:
-    if name.startswith("__") and name.endswith("__"):
-        return True
-    else:
-        return False
+    return name.startswith("__") and name.endswith("__")
 
 
-def as_dict(cfg: typing.Union["Config", type], exclude: typing.Optional[list[str]] = None) -> dict:
+def as_dict(
+    cfg: typing.Union["Config", type], exclude: typing.Optional[list[str]] = None
+) -> dict:
     """
     config serialization
     :param cfg:
@@ -178,13 +181,24 @@ class Config:
     _prefix_: typing.Optional[str] = None
     _provider_: AbstractProvider = DEFAULT_PROVIDER
 
-    def __init__(self, _provider_: typing.Optional[AbstractProvider] = None, **to_override):
+    def __init__(
+        self, _provider_: typing.Optional[AbstractProvider] = None, **to_override
+    ):
         _provider = _provider_ or self._provider_
-        self._init_fields(self._prefix_, self, _provider, **to_override)
+        self._init_fields(
+            self._prefix_, self, _provider, _parser=parse_objects, **to_override
+        )
 
     @classmethod
     def _init_fields(
-        cls, path: str, config: typing.Union["Config", type], _provider: AbstractProvider, **to_override
+        cls,
+        path: str,
+        config: typing.Union["Config", type],
+        _provider: AbstractProvider,
+        _parser: typing.Callable[
+            [object], typing.List[typing.Union[SubConfigInfo, FieldInfo]]
+        ],
+        **to_override,
     ):
         """
         Put the value in the configs
@@ -194,7 +208,7 @@ class Config:
         """
         config = config() if type(config) is type else config
         path = f"{path}." if path else ""
-        result = parse_objects(config)
+        result = _parser(config)
         for obj in result:
             if obj.name_to_set in to_override:
                 obj.obj._default = to_override.get(obj.name_to_set)
@@ -206,13 +220,18 @@ class Config:
                 # if subconfig has its own default provider we use it
                 # otherwise the default for master config
                 sub_provider = getattr(obj.obj, "_provider_", _provider)
-                sub_config = cls._init_fields(_path, obj.obj, sub_provider)
+                sub_config = cls._init_fields(
+                    _path, obj.obj, sub_provider, _parser=_parser
+                )
                 setattr(config, obj.name_to_set, sub_config)
             else:
                 if obj.obj.name is None:
                     obj.obj.name = f"{path}{obj.name_to_set}".replace(".", "_").upper()
 
-                if obj.obj._provider is DEFAULT_PROVIDER and _provider is not DEFAULT_PROVIDER:
+                if (
+                    obj.obj._provider is DEFAULT_PROVIDER
+                    and _provider is not DEFAULT_PROVIDER
+                ):
                     obj.obj._provider = _provider
 
                 setattr(config, obj.name_to_set, obj.obj.value)
