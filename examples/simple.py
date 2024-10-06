@@ -1,13 +1,11 @@
-#!/usr/bin/env python3.7
 from betterconf import betterconf
-from betterconf import field
-from betterconf.caster import to_int
+from betterconf import Alias
 
-@betterconf
+@betterconf(prefix="ACCOUNT")
 class AccountInfo:
-    username = field("ACCOUNT_USERNAME")
-    password = field("ACCOUNT_PASSWORD")
-    id: int = field("ACCOUNT_ID", caster=to_int)
+    username: Alias[str, "USERNAME"]
+    password: Alias[str, "PASSWORD"]
+    id: Alias[int, "ID"]
 
 
 if __name__ == "__main__":

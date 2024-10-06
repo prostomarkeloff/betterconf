@@ -4,6 +4,7 @@ from betterconf._field import _NO_DEFAULT, _Field as Field  # type: ignore
 from betterconf._specials import is_special, AliasSpecial
 from betterconf.caster import BUILTIN_CASTERS
 from dataclasses import dataclass
+from betterconf.exceptions import BetterconfError
 
 FT = typing.TypeVar("FT")
 
@@ -62,8 +63,14 @@ class FieldInfo(typing.Generic[FT]):
                     src, annotation.alias, annotation.tp, provider
                 )
                 field_info.name_in_python = name
-                if default is not _NO_DEFAULT:
+                if isinstance(default, Field):
+                    # var: Alias[str, "VAR"] = field(...)
+                    field_info.field = default
+
+                elif default is not _NO_DEFAULT:
                     field_info.field.default = default
+
+
                 field_info.field.name = name_in_field
 
                 if not field_info.field.provider:
@@ -81,6 +88,8 @@ class FieldInfo(typing.Generic[FT]):
 
             if not field.provider:
                 field.provider = provider
+            if not field.name:
+                field.name = name
 
             return cls(name_in_python=name, field=field)
         elif (
@@ -91,6 +100,9 @@ class FieldInfo(typing.Generic[FT]):
             field: Field[FT] = getattr(src, name)
             if not field.provider:
                 field.provider = provider
+            if not field.name:
+                field.name = name
+
             return cls(name_in_python=name, field=field)
 
         elif (
@@ -103,7 +115,16 @@ class FieldInfo(typing.Generic[FT]):
             field = Field(name=name_in_field, default=val, provider=provider)
             return cls(name_in_python=name, field=field)
 
-        raise
+        elif (
+            annotation in BUILTIN_CASTERS
+            and name in src.__dict__
+            and not isinstance(getattr(src, name), annotation)
+        ):
+            raise BetterconfError(
+                f"You try to set the value {repr(getattr(src, name))} for the field with name '{name}', that has type {annotation}.\nThe type {type(getattr(src, name))} is not assignable to type {annotation}"
+            )
+
+        raise BetterconfError("Something bad happened.\nBetterconf can't deal with this kind of value.")
 
 
 @dataclass
@@ -157,6 +178,11 @@ class ConfigInner:
                 parsed = SubConfigInfo.parse_into(element, provider, prefix)
                 sub_configs.append(parsed)
             elif isinstance(element, Field):
-                fields_info.append(FieldInfo(name, typing.cast(Field[typing.Any], element)))
+                if element.name is None:
+                    element.name = name
+
+                fields_info.append(
+                    FieldInfo(name, typing.cast(Field[typing.Any], element))
+                )
 
         return cls(fields_info, sub_configs)

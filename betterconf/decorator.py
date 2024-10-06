@@ -1,15 +1,3 @@
-"""
-New way of defining configs:
-
-```
-@betterconf(provider=JSONProvider("config.json"))
-class Man:
-    name: str
-    age: int
-    job: str
-```
-"""
-
 import typing
 from betterconf.provider import AbstractProvider, DEFAULT_PROVIDER
 from betterconf._config import ConfigInner, ConfigProto, Prefix
@@ -21,7 +9,7 @@ class_T = typing.TypeVar("class_T", bound=type)
 def betterconf(
     cls: class_T,
     provider: typing.Optional[AbstractProvider] = None,
-    prefix: typing.Optional[Prefix] = None,
+    prefix: typing.Optional[typing.Union[Prefix, str]] = None,
     subconfig: bool = False,
 ) -> class_T: ...
 
@@ -30,7 +18,7 @@ def betterconf(
 def betterconf(
     cls: None = None,
     provider: typing.Optional[AbstractProvider] = None,
-    prefix: typing.Optional[Prefix] = None,
+    prefix: typing.Optional[typing.Union[Prefix, str]] = None,
     subconfig: bool = False,
 ) -> typing.Callable[[class_T], class_T]: ...
 
@@ -38,7 +26,7 @@ def betterconf(
 def betterconf(
     cls: typing.Optional[class_T] = None,
     provider: typing.Optional[AbstractProvider] = None,
-    prefix: typing.Optional[Prefix] = None,
+    prefix: typing.Optional[typing.Union[Prefix, str]] = None,
     subconfig: bool = False,
 ) -> typing.Union[class_T, typing.Callable[[class_T], class_T]]:
     def inner(cls: class_T) -> class_T:
@@ -56,9 +44,7 @@ def betterconf(
 
                 if field.name_in_python in to_override:
                     field.field.default = to_override[field.name_in_python]
-                    setattr(
-                        self, field.name_in_python, field.field.value
-                    )
+                    setattr(self, field.name_in_python, field.field.value)
                 else:
                     setattr(self, field.name_in_python, field.field.value)
 
@@ -78,6 +64,10 @@ def betterconf(
         nonlocal provider
         if subconfig is False:
             provider = provider or DEFAULT_PROVIDER
+
+        nonlocal prefix
+        if isinstance(prefix, str):
+            prefix = Prefix(prefix)
 
         cls.__bc_subconfig__ = subconfig
         cls.__bc_inner__ = ConfigInner.parse_into(cls, provider, prefix)

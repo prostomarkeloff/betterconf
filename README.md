@@ -1,4 +1,4 @@
-# Minimalistic Python library for your configs.
+# Configs in Python made smooth and simple
 
 Betterconf (**better config**) is a Python library for project configuration
 management. It allows you define your config like a regular Python class.
@@ -8,6 +8,13 @@ Features:
 * Easy to hack.
 * Less boilerplate.
 * Minimal code to do big things.
+* Zero dependencies. Only vanilla Python >=3.11
+
+Betterconf is heavily typed, so your editors and typecheckers will be happy with it.
+
+It's not that huge as Pydantic, so takes like 5 minutes to dive into.
+
+Betterconf is highly customizable, so you can do anything with it.
 
 ## Installation
 
@@ -25,161 +32,68 @@ pip install betterconf
 
 ## How to?
 
-This is a guide written for betterconf 3.x, earlier versions can work differently
+Betterconf is very intuitive, so you don't need special knowledge to use it. We'll cover the basics.
 
-Try to write a simple config:
+The most simple config will look like this:
 ```python
-from betterconf import field, Config
+from betterconf import betterconf
 
-class MyConfig(Config):
-    my_var = field("my_var")
+@betterconf
+class Config:
+    LOGIN: str
+    PASSWORD: str
 
-cfg = MyConfig()
-print(cfg.my_var)
+cfg = Config()
+print(config.LOGIN)
 ```
 
-Try to run:
-```sh
-my_var=1 python our_file.py
-```
+Let's dive into what it does. By default, betterconf uses `EnvironmentProvider`, getting values with `os.getenv`,
+so you can run this example with `LOGIN=vasya PASSWORD=admin python config.py` and simply get your login.
 
-With default values:
-```python
-from betterconf import field, Config
 
-class MyConfig(Config):
-    my_var = field("my_var", default="hello world")
-    my_second_var = field("my_second_var", default=lambda: "hi") # can be callable!
-
-cfg = MyConfig()
-print(cfg.my_var)
-print(cfg.my_second_var)
-# hello world
-# hi
-```
-
-Override values when it's needed (for an example: test cases)
-```python
-from betterconf import field, Config
-
-class MyConfig(Config):
-    my_var = field("my_var", default="hello world")
-
-cfg = MyConfig(my_var="WOW!")
-print(cfg.my_var)
-# WOW!
-```
-
-By default, **betterconf** gets all values from `os.environ` but sometimes we need more.
-You can create own `field's value provider` in minutes:
+But what if you need a different provider? Betterconf lets you set providers as for config itself and for each field respectively.
 
 ```python
-from betterconf import field, Config
-from betterconf.config import AbstractProvider
+import json
+from betterconf import Alias
+from betterconf import betterconf, field
+from betterconf import JSONProvider, AbstractProvider
 
+sample_json_config = json.dumps({"field": {"from": {"json": 123}}})
+
+# our provider, that just gives the name of field back
 class NameProvider(AbstractProvider):
-    def get(self, name: str):
+    def get(self, name: str) -> str:
         return name
 
-class Cfg(Config):
-    my_var = field("my_var", provider=NameProvider())
+@betterconf(provider=NameProvider())
+class Config:
+    # value will be got from NameProvider and will simply be `my_fancy_name`
+    my_fancy_name: str
+    # here we get value from JSONProvider; the default nested_access is '.'
+    field_from_json: Alias[int, "field::from::json"] = field(provider=JSONProvider(sample_json_config, nested_access="::"))
 
-cfg = Cfg()
-print(cfg.my_var)
-# my_var
 ```
 
-You can specify the class' default provider manually:
+Betterconf casts primitive types itself, they include list, float, str, int. But if you need specific caster, say for complex object, you can write your own.
 
 ```python
-from betterconf import field, Config
-from betterconf.config import AbstractProvider
+from betterconf import betterconf
+from betterconf import AbstractCaster, field
 
-class FancyNameProvider(AbstractProvider):
-    def get(self, name: str) -> str:
-        return f"fancy_{name}"
-    
-class Cfg(Config):
-    _provider_ = FancyNameProvider()
-    
-    val1 = field("val1")
-    val2 = field("val2")
-    
-cfg = Cfg()
-print(cfg.val1, cfg.val2)
-# fancy_val1, fancy_val2
+class DashesToDotsCaster(AbstractCaster):
+    def cast(self, val: str) -> str:
+        return val.replace("_", ".")
 
-# or you can change the provider at initialization moment
-cfg = Cfg(_provider_=FancyNameProvider())
-...
+@betterconf
+class Config:
+    simple_int: int
+    value: str = field(caster=DashesToDotsCaster())
 
-# However, this won't work with nested configs; their provider will be as it's set in `_provider_` field
-
+print(Config(value="privet_mir", simple_int="55666").value)
 ```
 
-Also, we can cast our values to python objects (or just manipulate them):
-
-```python
-from betterconf import field, Config
-# out of the box we have `to_bool` and `to_int`
-from betterconf.caster import to_bool, to_int, AbstractCaster
-
-
-class DashToDotCaster(AbstractCaster):
-    def cast(self, val: str):
-        return val.replace("-", ".")
-
-to_dot = DashToDotCaster()
-
-class Cfg(Config):
-    integer = field("integer", caster=to_int)
-    boolean = field("boolean", caster=to_bool)
-    dots = field("dashes", caster=to_dot)
-
-cfg = Cfg()
-print(cfg.integer, cfg.boolean, cfg.dots)
-# -500, True, hello.world
-
-```
-
-```sh
-integer=-500 boolean=true dashes=hello-world python our_file.py
-```
-
-Sometimes we need to reference one field value in another one.
-
-```python
-from betterconf import Config, field, reference_field
-from betterconf.caster import to_int
-
-class MyConfig(Config):
-    money = field("MONEY_VAR", caster=to_int)
-    name = field("NAME_VAR")
-    
-    money_if_a_lot: int = reference_field(money, func=lambda m: m * 1000)
-    greeting: str = reference_field(money, name, func=lambda m, n: f"Hello, my name is {n} and I'm rich for {m}")
-    
-```
-
-There is a builtin support for constant fields and getting field's value on-fly at any place of code:
-
-```python
-from betterconf import value, constant_field, Config
-from betterconf.caster import to_int
-
-class Constants(Config):
-    admin_id: int = constant_field(1)
-    timezone: str = constant_field("UTC+3")
-    
-debug: bool = value("DEBUG", default=True)
-print("Current status of debbuging is ", debug)
-
-# betterconf can be used as a casting framework!
-val: int = value(default="123", caster=to_int)
-assert val == 123
-
-```
-
+Subconfigs and referencing one field in another declaration is also available. Check out examples folder.
 
 ## License
 This project is licensed under MIT License.

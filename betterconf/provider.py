@@ -23,7 +23,6 @@ class EnvironmentProvider(AbstractProvider):
         return value
 
 
-# experimental
 class JSONProvider(AbstractProvider):
     @staticmethod
     def __bool_object_hook(inp: typing.Any) -> typing.Dict[typing.Any, typing.Any]:

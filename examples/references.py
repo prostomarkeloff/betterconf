@@ -1,10 +1,10 @@
-from betterconf import betterconf, field, reference_field
-from betterconf.caster import to_int
+from betterconf import betterconf, reference_field, field
+from betterconf import Alias
 
 
 @betterconf
 class MoneyConfig:
-    money = field("MONEY_VAR", default=10, caster=to_int)
+    money: Alias[int, "MONEY_VAR"] = 10
     name = field("NAME_VAR", default="Johnny")
 
     money_if_a_lot: int = reference_field(money, func=lambda m: m * 1000)

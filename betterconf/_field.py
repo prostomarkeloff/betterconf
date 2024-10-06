@@ -1,4 +1,5 @@
 import typing
+from typing import TypeVarTuple
 
 from betterconf.caster import AbstractCaster
 from betterconf.caster import DEFAULT_CASTER
@@ -15,6 +16,7 @@ class Sentinel:
 _NO_DEFAULT = Sentinel()
 
 T = typing.TypeVar("T")
+Ts = TypeVarTuple("Ts")
 SentinelOrT = typing.Union[Sentinel, T]
 
 
@@ -112,12 +114,18 @@ def field(
     )
 
 
-def reference_field(
-    *fields: Field[typing.Any], func: typing.Callable[..., typing.Any]
-) -> typing.Any:
-    return typing.cast(
-        typing.Any, _Field(default=lambda: func(*(v.value for v in fields)))
-    )
+def reference_field(*fields: *Ts, func: typing.Callable[[*Ts], T]) -> T:
+    def _default() -> T:
+        vars: typing.List[typing.Any] = []
+        for field in fields:
+            if isinstance(field, _Field):
+                vars.append(field.value)  # type: ignore
+            else:
+                vars.append(field)
+
+        return func(*vars)  # type: ignore
+
+    return typing.cast(T, _Field(default=_default))
 
 
 def constant_field(const: T) -> T:

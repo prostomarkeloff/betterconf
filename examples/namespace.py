@@ -1,37 +1,35 @@
-from betterconf import betterconf, Prefix
-from betterconf import field
-from betterconf.caster import to_bool
+from betterconf import betterconf
 
 @betterconf
 class BaseConfig:
-    debug = field(default=False, caster=to_bool)
+    debug: bool = False
 
     @betterconf(subconfig=True)
     class Integration:
         @betterconf(subconfig=True)
         class SMTP:
-            server = field(default='smtp.gmail.com')
-            port = field(default='465')
-            login = field()
-            password = field()
+            server: str = "smtp.gmail.com"
+            port: int = 465
+            login: str
+            password: str
 
-@betterconf(prefix=Prefix("PROD"))
+@betterconf(prefix="PROD")
 class Prod(BaseConfig):
     @betterconf(subconfig=True)
     class Integration(BaseConfig.Integration):
         @betterconf(subconfig=True)
         class SMTP(BaseConfig.Integration.SMTP):
-            login = field(default='prod@gmail.com')
-            password = field(default='123456')
+            login: str = "prod@gmail.com"
+            password: str = "123456"
 
 
-@betterconf(prefix=Prefix("TEST"))
+@betterconf(prefix="TEST")
 class Test(BaseConfig):
-    debug = field(default=True, caster=to_bool)
+    debug: bool = True
 
     @betterconf(subconfig=True)
     class Integration(BaseConfig.Integration):
         @betterconf(subconfig=True)
         class SMTP(BaseConfig.Integration.SMTP):
-            login = field(default='test@gmail.com')
-            password = field(default='123456')
+            login: str = "test@gmail.com"
+            password: str = "123456"

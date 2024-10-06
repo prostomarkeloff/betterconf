@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from typing import Any
 
 from betterconf import betterconf
 from betterconf import field, Prefix, reference_field, value, constant_field
@@ -57,7 +58,7 @@ def update_environ():
     os.environ.pop("PROD_SUB1CONFIG_SUB2CONFIG_CONFIG_2", None)
 
 
-def test_negative_values(update_environ):
+def test_negative_values(update_environ: Any):
     caster = ConstantCaster[None]()
     caster.ABLE_TO_CAST = {"none": None}
 
@@ -83,7 +84,7 @@ def test_not_exist():
 def test_reference_field():
     @betterconf
     class ConfigWithRef2:
-        var1 = field("var1", default=lambda: {"hello": "world"})
+        var1: dict[str, str]  = field("var1", default=lambda: {"hello": "world"})
         var2 = reference_field(var1, func=lambda v: v["hello"])
 
     cfg = ConfigWithRef2()
@@ -104,7 +105,7 @@ def test_compose_field():
     assert cfg.var2 == "hello John"
 
 
-def test_experimental_basics(update_environ):
+def test_experimental_basics(update_environ: Any):
     @betterconf
     class Config:
         # caster type, alias
@@ -141,7 +142,7 @@ def test_json_provider():
     assert cfg.age > 10
 
 
-def test_experimental_subconfigs(update_environ):
+def test_experimental_subconfigs(update_environ: Any):
     @betterconf
     class Config:
         f = constant_field("ffff")
@@ -198,7 +199,7 @@ def test_default_provider_for_cfg():
     assert cfg.SubConfigWithoutProvider.val == "fancy_value"
 
 
-def test_instant_value(update_environ):
+def test_instant_value(update_environ: Any):
     v: bool = value("DEBUG", caster=to_bool)
     assert v is True
 
@@ -310,7 +311,7 @@ def test_own_caster():
     assert cfg.text == "text.with.dashes"
 
 
-def test_default_name_field(update_environ):
+def test_default_name_field(update_environ: Any):
     test_config = TestConfig()
     prod_config = ProdConfig()
 
@@ -330,7 +331,7 @@ def test_required_fields():
 
 def test_fiend_name_is_none():
     with pytest.raises(VariableNotFoundError):
-        _Field().value()
+        _Field().value()  # type: ignore
 
 
 def test_raise_abstract_provider():
