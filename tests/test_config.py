@@ -2,8 +2,11 @@ import os
 
 import pytest
 
-from betterconf import Config
-from betterconf import field
+from betterconf import betterconf
+from betterconf import field, Prefix, reference_field, value, constant_field
+from betterconf._field import _Field  # type: ignore
+from betterconf._specials import Alias
+from betterconf.provider import AbstractProvider
 from betterconf.caster import (
     AbstractCaster,
     ConstantCaster,
@@ -11,39 +14,34 @@ from betterconf.caster import (
     FloatCaster,
     ListCaster,
 )
-from betterconf.caster import to_bool, to_int, to_float, to_list
-from betterconf.config import (
-    AbstractProvider,
-    Field,
-    as_dict,
-    reference_field,
-    compose_field,
-    value,
-)
-from betterconf.config import VariableNotFoundError
+from betterconf.caster import to_bool, to_int
+from betterconf.exceptions import VariableNotFoundError
 from betterconf.exceptions import ImpossibleToCastError
 
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
 
-
-class TestConfig(Config):
+@betterconf
+class TestConfig:
     debug = field("DEBUG", default=False, caster=to_bool)
 
+    @betterconf(subconfig=True)
     class Sub1Config:
+        @betterconf(subconfig=True)
         class Sub2Config:
-            config_1 = field(default="base.mail.com")
+            config_1 = field(default="test.mail.com")
             config_2 = field(default="465")
             config_3 = field(default="test")
 
-
+@betterconf(prefix=Prefix("PROD"))
 class ProdConfig(TestConfig):
-    _prefix_ = "PROD"
 
+    @betterconf(subconfig=True)
     class Sub1Config(TestConfig.Sub1Config):
+        @betterconf(subconfig=True)
         class Sub2Config(TestConfig.Sub1Config.Sub2Config):
             config_1 = field(default="prod.mail.com")
-            config_2 = field(default="465")
+            config_2 = field(default="100202")
 
 
 @pytest.fixture
@@ -60,10 +58,11 @@ def update_environ():
 
 
 def test_negative_values(update_environ):
-    caster = ConstantCaster()
-    caster.ABLE_TO_CAST = dict(none=None)
+    caster = ConstantCaster[None]()
+    caster.ABLE_TO_CAST = {"none": None}
 
-    class NegativeConfig(Config):
+    @betterconf
+    class NegativeConfig:
         none = field("NONEFUL_FIELD", caster=caster)
         false = field("FALSY_FIELD", caster=to_int)
 
@@ -73,7 +72,8 @@ def test_negative_values(update_environ):
 
 
 def test_not_exist():
-    class ConfigBad(Config):
+    @betterconf
+    class ConfigBad:
         var1 = field(VAR_1)
 
     with pytest.raises(VariableNotFoundError):
@@ -81,7 +81,8 @@ def test_not_exist():
 
 
 def test_reference_field():
-    class ConfigWithRef2(Config):
+    @betterconf
+    class ConfigWithRef2:
         var1 = field("var1", default=lambda: {"hello": "world"})
         var2 = reference_field(var1, func=lambda v: v["hello"])
 
@@ -90,12 +91,13 @@ def test_reference_field():
 
 
 def test_compose_field():
-    class ConfigWithCompose(Config):
+    @betterconf
+    class ConfigWithCompose:
         var1 = field("var1", default="John")
-        var2 = compose_field(
+        var2 = reference_field(
             field("var2", default="hello"),
             var1,
-            lambda first, second: f"{first} {second}",
+            func=lambda first, second: f"{first} {second}",
         )
 
     cfg = ConfigWithCompose()
@@ -103,14 +105,10 @@ def test_compose_field():
 
 
 def test_experimental_basics(update_environ):
-    from typing import Annotated
-    from betterconf.experimental import betterconf
-    from betterconf import field
-
     @betterconf
     class Config:
         # caster type, alias
-        debug: Annotated[bool, "DEBUG"]
+        debug: Alias[bool, "DEBUG"]
         value: str = field(default="LOL")
         meta = field(default=123)
 
@@ -121,8 +119,6 @@ def test_experimental_basics(update_environ):
 
 
 def test_json_provider():
-    from typing import Annotated
-    from betterconf.experimental import betterconf
     from betterconf.provider import JSONProvider
     import json
 
@@ -134,8 +130,8 @@ def test_json_provider():
         provider=JSONProvider.from_string(data, nested_access="::"),
     )
     class Config:
-        debug: Annotated[bool, "DEBUG"]
-        nested_status: Annotated[bool, "nested::status"]
+        debug: Alias[bool, "DEBUG"]
+        nested_status: Alias[bool, "nested::status"]
         name: str
         age: int
 
@@ -146,44 +142,23 @@ def test_json_provider():
 
 
 def test_experimental_subconfigs(update_environ):
-    from typing import Annotated
-    from betterconf.experimental import betterconf
-    from betterconf import constant_field
-
     @betterconf
     class Config:
         f = constant_field("ffff")
 
+        @betterconf(subconfig=True)
         class Sub:
-            debug: Annotated[bool, "DEBUG"]
+            debug: Alias[bool, "DEBUG"]
 
     cfg = Config()
     assert cfg.f == "ffff"
     assert cfg.Sub.debug is True
 
 
-def test_multiple_compose_field():
-    class ConfigWithCompose(Config):
-        age = field("age", default=16, caster=to_int)
-        name = field("name", default="John")
-        greeting = compose_field(age, name, lambda a, n: f"My name is {n}. I'm {a}")
-        dream = compose_field(
-            greeting,
-            reference_field(age, func=lambda a: a + 10),
-            lambda f, s: f"When I was young I said '{f}', but now I'm {s} and I don't say that crap",
-        )
-
-    cfg = ConfigWithCompose()
-    assert cfg.greeting == "My name is John. I'm 16"
-    assert (
-            cfg.dream
-            == "When I was young I said 'My name is John. I'm 16', but now I'm 26 and I don't say that crap"
-    )
-
-
 def test_reference_to_override():
-    class ConfigWithReference(Config):
-        var1: int | Field = field("var1", default=4)
+    @betterconf
+    class ConfigWithReference:
+        var1: int = field("var1", default=4)
         var2: int = reference_field(var1, func=lambda v: v * 2)
 
     cfg1 = ConfigWithReference()
@@ -203,16 +178,17 @@ def test_default_provider_for_cfg():
         def get(self, name: str) -> str:
             return f"subfancy_{name}"
 
-    class MyConfig(Config):
-        _provider_ = FancyProvider()
+    @betterconf(provider=FancyProvider())
+    class MyConfig:
 
         val: str = field("value")
 
+        @betterconf(subconfig=True, provider=SubFancyProvider())
         class SubConfig:
-            _provider_ = SubFancyProvider()
 
             subval: str = field("value")
 
+        @betterconf(subconfig=True)
         class SubConfigWithoutProvider:
             val: str = field("value")
 
@@ -228,10 +204,11 @@ def test_instant_value(update_environ):
 
 
 def test_reference_many_fields():
-    class ConfigWithManyReferences(Config):
-        var1: int | Field = field("var1", default=4)
-        var2: int | Field = field("var2", default=5)
-        var3: int | Field = field("var3", default=6)
+    @betterconf
+    class ConfigWithManyReferences:
+        var1: int = field("var1", default=4)
+        var2: int = field("var2", default=5)
+        var3: int = field("var3", default=6)
         var4: int = reference_field(
             var1, var2, var3, func=lambda v1, v2, v3: v1 * 2 + v2 * 2 + v3 * 3
         )
@@ -241,7 +218,8 @@ def test_reference_many_fields():
 
 
 def test_field_as_default():
-    class ConfigWithDefaults(Config):
+    @betterconf
+    class ConfigWithDefaults:
         var1 = field(default="Goyda")
         var2 = field(default=var1)
 
@@ -257,7 +235,8 @@ def test_field_as_default():
 def test_exist():
     os.environ[VAR_1] = VAR_1_VALUE
 
-    class ConfigGood(Config):
+    @betterconf
+    class ConfigGood:
         var1 = field(VAR_1)
 
     cfg = ConfigGood()
@@ -265,7 +244,8 @@ def test_exist():
 
 
 def test_default():
-    class ConfigDefault(Config):
+    @betterconf
+    class ConfigDefault:
         var1 = field("var_1", default="var_1 value")
         var2 = field("var_2", default=lambda: "callable var_2")
 
@@ -275,7 +255,8 @@ def test_default():
 
 
 def test_override():
-    class ConfigOverride(Config):
+    @betterconf
+    class ConfigOverride:
         var1 = field("var_1", default=1)
 
     cfg = ConfigOverride(var1=100000)
@@ -289,7 +270,8 @@ def test_own_provider():
 
     provider = MyProvider()
 
-    class ConfigWithMyProvider(Config):
+    @betterconf
+    class ConfigWithMyProvider:
         var1 = field("var_1", provider=provider)
 
     cfg = ConfigWithMyProvider()
@@ -300,7 +282,8 @@ def test_bundled_casters():
     os.environ["boolean"] = "true"
     os.environ["integer"] = "-543"
 
-    class MyConfig(Config):
+    @betterconf
+    class MyConfig:
         boolean = field("boolean", caster=to_bool)
         integer = field("integer", caster=to_int)
 
@@ -319,7 +302,8 @@ def test_own_caster():
 
     to_dot = DashToDotCaster()
 
-    class MyConfig(Config):
+    @betterconf
+    class MyConfig:
         text = field("text-with-dashes", caster=to_dot)
 
     cfg = MyConfig()
@@ -336,7 +320,8 @@ def test_default_name_field(update_environ):
 
 
 def test_required_fields():
-    class BaseConfig(Config):
+    @betterconf
+    class BaseConfig:
         config_1 = field()
 
     with pytest.raises(VariableNotFoundError):
@@ -345,7 +330,7 @@ def test_required_fields():
 
 def test_fiend_name_is_none():
     with pytest.raises(VariableNotFoundError):
-        Field().value()
+        _Field().value()
 
 
 def test_raise_abstract_provider():
@@ -359,7 +344,7 @@ def test_raise_abstract_caster():
 
 
 def test_constant_caster():
-    constant_caster = ConstantCaster()
+    constant_caster = ConstantCaster[str]()
 
     constant_caster.ABLE_TO_CAST = {("key_1", "key_2"): "test"}
     assert constant_caster.cast("key_2") == "test"
@@ -397,20 +382,3 @@ def test_list_caster():
     list_caster.separator = ", "
     assert list_caster.cast("a, b, c") == ["a", "b", "c"]
     assert list_caster.cast("a, b, c, ") == ["a", "b", "c"]
-
-
-def test_to_dict():
-    config = ProdConfig()
-
-    assert as_dict(config) == {
-        "_prefix_": "PROD",
-        "_provider_": {},
-        "Sub1Config": {
-            "Sub2Config": {
-                "config_1": "prod.mail.com",
-                "config_2": "465",
-                "config_3": "test",
-            },
-        },
-        "debug": False,
-    }

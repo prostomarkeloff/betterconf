@@ -1,13 +1,13 @@
 #!/usr/bin/env python3.7
-from betterconf import Config
+from betterconf import betterconf
 from betterconf import field
 from betterconf.caster import to_int
 
-
-class AccountInfo(Config):
+@betterconf
+class AccountInfo:
     username = field("ACCOUNT_USERNAME")
     password = field("ACCOUNT_PASSWORD")
-    id = field("ACCOUNT_ID", caster=to_int)
+    id: int = field("ACCOUNT_ID", caster=to_int)
 
 
 if __name__ == "__main__":

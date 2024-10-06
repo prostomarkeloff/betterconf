@@ -13,10 +13,9 @@ class AbstractCaster:
 
 
 class ConstantCaster(AbstractCaster, typing.Generic[VT]):
-
-    ABLE_TO_CAST: typing.Dict[typing.Union[str, typing.Tuple[str, ...]], typing.Any] = (
-        {}
-    )
+    ABLE_TO_CAST: typing.Dict[
+        typing.Union[str, typing.Tuple[str, ...]], typing.Any
+    ] = {}
 
     def cast(self, val: str) -> typing.Union[VT, typing.NoReturn]:
         """Cast using ABLE_TO_CAST dictionary as in BoolCaster"""
@@ -34,7 +33,6 @@ class ConstantCaster(AbstractCaster, typing.Generic[VT]):
 
 
 class BoolCaster(ConstantCaster[bool]):
-
     ABLE_TO_CAST = {
         "true": True,
         "1": True,
@@ -90,7 +88,7 @@ class LoggingLogLevelCaster(ConstantCaster[int]):
     }
 
 
-class LoguruLogLevelCaster(ConstantCaster):
+class LoguruLogLevelCaster(ConstantCaster[str]):
     levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
     ABLE_TO_CAST = {level.lower(): level for level in levels}
 
@@ -110,7 +108,7 @@ to_logging_log_level = LoggingLogLevelCaster()
 to_loguru_log_level = LoguruLogLevelCaster()
 DEFAULT_CASTER = NothingCaster()
 
-_BUILTIN_CASTERS = {
+BUILTIN_CASTERS = {
     bool: to_bool,
     int: to_int,
     float: to_float,
