@@ -70,7 +70,6 @@ class FieldInfo(typing.Generic[FT]):
                 elif default is not _NO_DEFAULT:
                     field_info.field.default = default
 
-
                 field_info.field.name = name_in_field
 
                 if not field_info.field.provider:
@@ -124,7 +123,9 @@ class FieldInfo(typing.Generic[FT]):
                 f"You try to set the value {repr(getattr(src, name))} for the field with name '{name}', that has type {annotation}.\nThe type {type(getattr(src, name))} is not assignable to type {annotation}"
             )
 
-        raise BetterconfError("Something bad happened.\nBetterconf can't deal with this kind of value.")
+        raise BetterconfError(
+            "Something bad happened.\nBetterconf can't deal with this kind of value.\nProbably you've tried to use something like 'dict' in a constant manner. For this special case use 'constant_field`"
+        )
 
 
 @dataclass
