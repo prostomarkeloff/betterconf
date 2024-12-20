@@ -31,6 +31,12 @@ class JSONProvider(AbstractProvider):
             if isinstance(v, bool):
                 d[k] = str(v)
                 continue
+            elif isinstance(v, dict):
+                d[k] = json.dumps(v)
+                continue
+            elif isinstance(v, list):
+                d[k] = json.dumps(v)
+                continue
             d[k] = v
         return d
 
