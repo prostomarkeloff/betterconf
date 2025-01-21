@@ -2,7 +2,8 @@ import os
 import json
 import typing
 
-from betterconf.exceptions import VariableNotFoundError
+from pathlib import Path
+from betterconf.exceptions import BetterconfError, VariableNotFoundError
 
 
 class AbstractProvider:
@@ -30,9 +31,6 @@ class JSONProvider(AbstractProvider):
         for k, v in inp.items():
             if isinstance(v, bool):
                 d[k] = str(v)
-                continue
-            elif isinstance(v, dict):
-                d[k] = json.dumps(v)
                 continue
             elif isinstance(v, list):
                 d[k] = json.dumps(v)
@@ -84,6 +82,65 @@ class JSONProvider(AbstractProvider):
             raise VariableNotFoundError(name)
 
         return result
+
+
+class DotenvProvider(AbstractProvider):
+    def __init__(
+        self, file_path: str | Path = ".env", *, auto_load: bool = False
+    ) -> None:
+        self.file_path = file_path
+        self._loaded_into: typing.Literal["env", "in", None] = None
+
+        self._environ = EnvironmentProvider()
+        self._inner: dict[str, str] = {}
+
+        self._auto_load = auto_load
+
+    def _put_lines_to_vars(self, into: typing.Literal["env", "in"]):
+        with open(self.file_path, "r") as f:
+            lines = f.readlines()
+
+        vars: dict[str, str] = {}
+        for line in lines:
+            if line == "\n":
+                continue
+            try:
+                var_name, var_value = line.split("=", 1)
+            except ValueError:
+                raise BetterconfError(
+                    "DotenvProvider can't read your dotenv file because it seems to be broken"
+                )
+
+            var_value = var_value.rstrip("\n")
+            var_name = var_name.rstrip("\n")
+            vars[var_name] = var_value
+
+        self._loaded_into = into
+        if into == "in":
+            self._inner.update(vars)
+        elif into == "env":
+            os.environ.update(vars)
+
+    def load_into_env(self):
+        self._put_lines_to_vars(into="env")
+
+    def load_into_provider(self):
+        self._put_lines_to_vars(into="in")
+
+    def get(self, name: str) -> str:
+        if self._auto_load and not self._loaded_into:
+            self.load_into_provider()
+
+        if not self._loaded_into:
+            raise BetterconfError("You haven't loaded values from .env manually")
+
+        if self._loaded_into == "in":
+            value = self._inner.get(name)
+            if value is None:
+                raise VariableNotFoundError(name)
+            return value
+        else:
+            return self._environ.get(name)
 
 
 DEFAULT_PROVIDER = EnvironmentProvider()

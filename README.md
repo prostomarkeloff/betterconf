@@ -51,6 +51,34 @@ Let's dive into what it does. By default, betterconf uses `EnvironmentProvider`,
 so you can run this example with `LOGIN=vasya PASSWORD=admin python config.py` and simply get your login.
 
 
+There is a very usable thing in our fancy-web-world, called `.env`s. Betterconf, since 4.5.0 automatically supports them out-of-the-box! See it:
+
+```python
+from betterconf import betterconf, DotenvProvider
+
+# here betterconf gets values from `.env` file, you can change name or the path passing it as the first
+# argument to provider.
+# also, auto_load lets you not to write `provider.load_into_env` (loading variables to os.environ)
+# or `provider.load_into_provider()` (loading them into the provider's inner storage).
+@betterconf(provider=DotenvProvider(auto_load=True))
+class Config:
+    val1: int
+    val2: str
+    name: str
+
+cfg = Config()
+print(cfg.val1, cfg.val2, cfg.name)
+```
+
+Your `.env` then looks like this:
+
+```
+name="John Wicked"
+val1=12
+val2="testing value"
+```
+
+
 But what if you need a different provider? Betterconf lets you set providers as for config itself and for each field respectively.
 
 ```python
