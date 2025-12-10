@@ -168,7 +168,7 @@ class ConfigInner:
         fields_info: typing.List[FieldInfo[typing.Any]] = []
         for name, annotation in annotations.items():
             if name in cfg.__dict__:
-                fields_info.append(FieldInfo(name, cfg.__dict__[name]))
+                fields_info.append(FieldInfo[typing.Any](name, cfg.__dict__[name]))
                 continue
 
             parsed = FieldInfo[typing.Any].parse_into(
