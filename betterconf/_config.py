@@ -183,7 +183,7 @@ class ConfigInner:
                 sub_configs.append(parsed)
             elif isinstance(element, Field):
                 if element.name is None:
-                    element.name = name
+                    element.name = name if prefix is None else Prefix.process_name(name, prefix)
 
                 fields_info.append(
                     FieldInfo(name, typing.cast(Field[typing.Any], element))
