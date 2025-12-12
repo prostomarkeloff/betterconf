@@ -1,29 +1,31 @@
-[tool.poetry]
+[project]
 name = "betterconf"
 version = "4.6.1"
 description = "Configs in Python made smooth and simple"
-authors = ["prostomarkeloff"]
-license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/prostomarkeloff/betterconf"
-repository = "https://github.com/prostomarkeloff/betterconf"
-documentation = "https://github.com/prostomarkeloff/betterconf"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "prostomarkeloff" }]
 keywords = ["configs", "config", "env", ".env"]
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
 
-[tool.poetry.dependencies]
-python = "^3.11"
+[project.urls]
+Homepage = "https://github.com/prostomarkeloff/betterconf"
+Repository = "https://github.com/prostomarkeloff/betterconf"
+Documentation = "https://github.com/prostomarkeloff/betterconf"
+
+[dependency-groups]
+dev = [
+  "pytest>=9.0.2",
+  "ruff>=0.14.12",
+]
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.2"
-ruff = "^0.14.12"
 
 [tool.ruff.lint]
 ignore = ["F"]
 
 [build-system]
-requires = ["poetry>=1.0.0"]
-build-backend = "poetry.masonry.api"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
