@@ -134,3 +134,4 @@ dmypy.json
 .vscode/
 poetry.lock
 t.py
+.ruff_cache/

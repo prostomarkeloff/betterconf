@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterconf"
-version = "4.5.0"
+version = "4.6.0"
 description = "Configs in Python made smooth and simple"
 authors = ["prostomarkeloff"]
 license = "MIT"
@@ -18,8 +18,11 @@ python = "^3.11"
 filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
-ruff = "^0.6.9"
+pytest = "^9.0.2"
+ruff = "^0.14.12"
+
+[tool.ruff.lint]
+ignore = ["F"]
 
 [build-system]
 requires = ["poetry>=1.0.0"]

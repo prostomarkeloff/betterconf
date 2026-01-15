@@ -1,5 +1,6 @@
 from betterconf import betterconf
 
+
 @betterconf
 class BaseConfig:
     debug: bool = False
@@ -12,6 +13,7 @@ class BaseConfig:
             port: int = 465
             login: str
             password: str
+
 
 @betterconf(prefix="PROD")
 class Prod(BaseConfig):
