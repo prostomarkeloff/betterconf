@@ -170,12 +170,13 @@ def test_reference_to_override():
 
 
 def test_default_provider_for_cfg():
+    os.environ["value"] = "subfancy_value_from_env"
+
     class FancyProvider(AbstractProvider):
         def get(self, name: str) -> str:
             return f"fancy_{name}"
 
     class SubFancyProvider(AbstractProvider):
-
         def get(self, name: str) -> str:
             return f"subfancy_{name}"
 
@@ -186,7 +187,6 @@ def test_default_provider_for_cfg():
 
         @betterconf(subconfig=True, provider=SubFancyProvider())
         class SubConfig:
-
             subval: str = field("value")
 
         @betterconf(subconfig=True)
@@ -196,7 +196,9 @@ def test_default_provider_for_cfg():
     cfg = MyConfig()
     assert cfg.val == "fancy_value"
     assert cfg.SubConfig.subval == "subfancy_value"
-    assert cfg.SubConfigWithoutProvider.val == "fancy_value"
+    assert cfg.SubConfigWithoutProvider.val == "subfancy_value_from_env"
+
+    os.environ.pop("value")
 
 
 def test_instant_value(update_environ: Any):
