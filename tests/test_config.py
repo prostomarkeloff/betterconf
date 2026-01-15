@@ -22,6 +22,7 @@ from betterconf.exceptions import ImpossibleToCastError
 VAR_1 = "hello"
 VAR_1_VALUE = "hello!#"
 
+
 @betterconf
 class TestConfig:
     debug = field("DEBUG", default=False, caster=to_bool)
@@ -34,9 +35,9 @@ class TestConfig:
             config_2 = field(default="465")
             config_3 = field(default="test")
 
+
 @betterconf(prefix=Prefix("PROD"))
 class ProdConfig(TestConfig):
-
     @betterconf(subconfig=True)
     class Sub1Config(TestConfig.Sub1Config):
         @betterconf(subconfig=True)
@@ -84,7 +85,7 @@ def test_not_exist():
 def test_reference_field():
     @betterconf
     class ConfigWithRef2:
-        var1: dict[str, str]  = field("var1", default=lambda: {"hello": "world"})
+        var1: dict[str, str] = field("var1", default=lambda: {"hello": "world"})
         var2 = reference_field(var1, func=lambda v: v["hello"])
 
     cfg = ConfigWithRef2()
@@ -115,8 +116,8 @@ def test_experimental_basics(update_environ: Any):
 
     cfg = Config()
     assert cfg.debug is True
-    assert cfg.value is not "lol"
-    assert cfg.meta is 123
+    assert cfg.value != "lol"
+    assert cfg.meta == 123
 
 
 def test_json_provider():
@@ -124,7 +125,14 @@ def test_json_provider():
     import json
 
     data = json.dumps(
-        {"DEBUG": True, "name": "Ilaja", "age": 15, "nested": {"status": True, }}
+        {
+            "DEBUG": True,
+            "name": "Ilaja",
+            "age": 15,
+            "nested": {
+                "status": True,
+            },
+        }
     )
 
     @betterconf(
@@ -175,28 +183,25 @@ def test_default_provider_for_cfg():
             return f"fancy_{name}"
 
     class SubFancyProvider(AbstractProvider):
-
         def get(self, name: str) -> str:
             return f"subfancy_{name}"
 
     @betterconf(provider=FancyProvider())
     class MyConfig:
-
         val: str = field("value")
 
         @betterconf(subconfig=True, provider=SubFancyProvider())
         class SubConfig:
-
             subval: str = field("value")
 
         @betterconf(subconfig=True)
         class SubConfigWithoutProvider:
-            val: str = field("value")
+            subvalue: str = field("value")
 
     cfg = MyConfig()
     assert cfg.val == "fancy_value"
     assert cfg.SubConfig.subval == "subfancy_value"
-    assert cfg.SubConfigWithoutProvider.val == "fancy_value"
+    assert cfg.SubConfigWithoutProvider.subvalue == "fancy_value"
 
 
 def test_instant_value(update_environ: Any):

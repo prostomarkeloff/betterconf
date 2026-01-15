@@ -1,6 +1,7 @@
 from betterconf import betterconf
 from betterconf import Alias
 
+
 @betterconf(prefix="ACCOUNT")
 class AccountInfo:
     username: Alias[str, "USERNAME"]
