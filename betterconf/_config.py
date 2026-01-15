@@ -163,20 +163,30 @@ class ConfigInner:
         try:
             annotations = typing.get_type_hints(cfg, include_extras=True)
         except TypeError:
-            annotations = {}
+            annotations: typing.Dict[str, typing.Any] = {}
 
         fields_info: typing.List[FieldInfo[typing.Any]] = []
         for name, annotation in annotations.items():
             if name in cfg.__dict__:
+                name_in_python = Prefix.process_name(name, prefix) if prefix is not None else name
+                field: Field[typing.Any] = cfg.__dict__[name]
+
+                if not field.provider:
+                    field.provider = provider
+
+                fields_info.append(FieldInfo(name_in_python, field))
                 continue
 
             parsed = FieldInfo[typing.Any].parse_into(
-                cfg, name, annotation, provider, prefix
+                cfg,
+                name,
+                annotation,
+                provider,
+                prefix,
             )
             fields_info.append(parsed)
 
         sub_configs: typing.List[SubConfigInfo] = []
-
         for name, element in cfg.__dict__.items():
             if getattr(element, "__bc_subconfig__", False):
                 parsed = SubConfigInfo.parse_into(element, provider, prefix)
@@ -187,8 +197,7 @@ class ConfigInner:
                         name if prefix is None else Prefix.process_name(name, prefix)
                     )
 
-                fields_info.append(
-                    FieldInfo(name, typing.cast(Field[typing.Any], element))
-                )
+                field_info = FieldInfo(name, typing.cast("Field[typing.Any]", element))
+                fields_info.append(field_info)
 
         return cls(fields_info, sub_configs)
