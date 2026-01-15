@@ -196,12 +196,12 @@ def test_default_provider_for_cfg():
 
         @betterconf(subconfig=True)
         class SubConfigWithoutProvider:
-            valu: str = field("value")
+            subvalue: str = field("value")
 
     cfg = MyConfig()
     assert cfg.val == "fancy_value"
     assert cfg.SubConfig.subval == "subfancy_value"
-    assert cfg.SubConfigWithoutProvider.valu == "fancy_value"
+    assert cfg.SubConfigWithoutProvider.subvalue == "fancy_value"
 
 
 def test_instant_value(update_environ: Any):
