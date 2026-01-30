@@ -86,15 +86,23 @@ class JSONProvider(AbstractProvider):
 
 class DotenvProvider(AbstractProvider):
     def __init__(
-        self, file_path: str | Path = ".env", *, auto_load: bool = False
+        self,
+        file_path: str | Path = ".env",
+        *,
+        auto_load: bool = False,
+        ignore_case: bool = False,
     ) -> None:
         self.file_path = file_path
+        self.ignore_case = ignore_case
         self._loaded_into: typing.Literal["env", "in", None] = None
 
         self._environ = EnvironmentProvider()
         self._inner: dict[str, str] = {}
 
         self._auto_load = auto_load
+
+    def _normalize(self, name: str) -> str:
+        return name.lower() if self.ignore_case else name
 
     def _put_lines_to_vars(self, into: typing.Literal["env", "in"]):
         with open(self.file_path, "r") as f:
@@ -112,14 +120,17 @@ class DotenvProvider(AbstractProvider):
                 )
 
             var_value = var_value.rstrip("\n")
-            var_name = var_name.rstrip("\n")
+            var_name = self._normalize(var_name.rstrip("\n"))
+
             vars[var_name] = var_value
 
         self._loaded_into = into
         if into == "in":
             self._inner.update(vars)
         elif into == "env":
-            os.environ.update(vars)
+            os.environ.update(vars if not self.ignore_case else {
+                k.upper(): v for k, v in vars.items()
+            })
 
     def load_into_env(self):
         self._put_lines_to_vars(into="env")
@@ -134,12 +145,20 @@ class DotenvProvider(AbstractProvider):
         if not self._loaded_into:
             raise BetterconfError("You haven't loaded values from .env manually")
 
+        key = self._normalize(name)
+
         if self._loaded_into == "in":
-            value = self._inner.get(name)
+            value = self._inner.get(key)
             if value is None:
                 raise VariableNotFoundError(name)
             return value
         else:
+            if self.ignore_case:
+                for k, v in os.environ.items():
+                    if k.lower() == key:
+                        return v
+                raise VariableNotFoundError(name)
+
             return self._environ.get(name)
 
 
