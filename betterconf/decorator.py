@@ -23,7 +23,6 @@ def betterconf(
 ) -> typing.Callable[[class_T], class_T]: ...
 
 
-@typing.dataclass_transform()
 def betterconf(
     cls: typing.Optional[class_T] = None,
     provider: typing.Optional[AbstractProvider] = None,
